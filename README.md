@@ -1,4 +1,4 @@
-# Cortex
+# {C}ortex
 
 Deep learning library developed in C.
 
