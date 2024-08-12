@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include "cortex.h"
+#include <cortex.h>
 
 int main()
 {
@@ -19,6 +19,7 @@ int main()
     for(int i = 0; i < tensor->ndim; i++) 
     {
         printf("Dimension %d size: %d\n", i, tensor->shape[i]);
+        printf("Dimension %d stride: %d\n", i, tensor->stride[i]);
     }
     for(int i = 0; i < tensor->size; i++) 
     {

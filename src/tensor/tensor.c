@@ -4,7 +4,6 @@
 Tensor* create(int *shape, int ndim) 
 {
     Tensor *tensor = (Tensor *)malloc(sizeof(Tensor));
-    tensor->data = (float *)malloc(tensor->size * sizeof(float));
     tensor->ndim = ndim;
     tensor->shape = (int *)malloc(ndim * sizeof(int));
     for(int i = 0; i < ndim; i++) 
@@ -22,6 +21,7 @@ Tensor* create(int *shape, int ndim)
             tensor->stride[i - 1] = tensor->stride[i] * tensor->shape[i];
         }
     }
+    tensor->data = (float *)malloc(tensor->size * sizeof(float));
     return tensor;
 }
 
