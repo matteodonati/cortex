@@ -10,7 +10,11 @@ OBJDIR = build/obj
 INCDIR = include
 LIBDIR = build/lib
 BINDIR = build/bin
-PREFIX = /usr/local
+
+# Installation paths (can be overridden by user)
+PREFIX ?= /usr/local
+INCLUDE_INSTALL_DIR ?= $(PREFIX)/include/cortex
+LIB_INSTALL_DIR ?= $(PREFIX)/lib
 
 # Source files and object files
 SRC = $(shell find $(SRCDIR) -name '*.c')
@@ -52,14 +56,14 @@ print-obj:
 
 # Install the library and headers
 install: $(SHARED_LIB)
-	@mkdir -p $(PREFIX)/lib $(PREFIX)/include/cortex
-	@cp $(SHARED_LIB) $(PREFIX)/lib/
-	@cp -r $(INCDIR)/* $(PREFIX)/include/cortex/
-	@echo "Shared library installed to $(PREFIX)/lib"
-	@echo "Headers installed to $(PREFIX)/include/cortex"
+	@mkdir -p $(LIB_INSTALL_DIR) $(INCLUDE_INSTALL_DIR)
+	@cp $(SHARED_LIB) $(LIB_INSTALL_DIR)/
+	@cp -r $(INCDIR)/* $(INCLUDE_INSTALL_DIR)/
+	@echo "Shared library installed to $(LIB_INSTALL_DIR)"
+	@echo "Headers installed to $(INCLUDE_INSTALL_DIR)"
 
 # Uninstall the library and headers
 uninstall:
-	rm -f $(PREFIX)/lib/libcortex.so
-	rm -rf $(PREFIX)/include/cortex
+	rm -f $(LIB_INSTALL_DIR)/libcortex.so
+	rm -rf $(INCLUDE_INSTALL_DIR)
 	@echo "Shared library and headers uninstalled"

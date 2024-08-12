@@ -51,6 +51,6 @@ Module.symvers
 Mkfile.old
 dkms.conf
 
-# Compilation output
+# Build folders
+build/
 bin/
-obj/
