@@ -8,22 +8,30 @@ BASE_DIR=$(dirname "$PROGRAM_DIR")
 BIN_DIR="$BASE_DIR/bin/$PROGRAM_NAME"
 
 # Create the binary directory if it doesn't exist
-mkdir -p "$BIN_DIR" > /dev/null 2>&1
+mkdir -p "$BIN_DIR"
 
 # Uninstall the library silently
-sudo make uninstall > /dev/null 2>&1
+sudo make uninstall
 
 # Clean project directory silently
-make clean > /dev/null 2>&1
+make clean
 
 # Compile the library silently
-make > /dev/null 2>&1
+make
 
 # Install the library silently
-sudo make install > /dev/null 2>&1
+sudo make install
+
+# Remove existing binary file
+rm -f "$BIN_DIR/$PROGRAM_NAME"
 
 # Compile the program and place the binary in the specified directory
-gcc -o "$BIN_DIR/$PROGRAM_NAME" "$PROGRAM_SRC" -lcortex -L/usr/local/lib -I/usr/local/include/cortex > /dev/null 2>&1
+gcc -o "$BIN_DIR/$PROGRAM_NAME" "$PROGRAM_SRC" -lcortex -L/usr/local/lib -I/usr/local/include/cortex
 
 # Run the program
-"$BIN_DIR/$PROGRAM_NAME"
+if [ $? -eq 0 ]; then
+    echo ""
+    "$BIN_DIR/$PROGRAM_NAME"
+else
+    exit 1
+fi

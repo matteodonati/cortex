@@ -1,8 +1,9 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include "tensor/tensor.h"
 #include "tensor/utils/utils.h"
 
-void print_shape(Tensor *tensor) 
+void print_tensor_shape(Tensor *tensor)
 {
     printf("(");
     for(int i = 0; i < tensor->ndim; i++) 
@@ -14,4 +15,66 @@ void print_shape(Tensor *tensor)
         }
     }
     printf(")\n");
+}
+
+void print_tensor_data_recursive(float *data, int *shape, int ndim, int *indices, int level) 
+{
+    if (level == ndim - 1) 
+    {
+        // Print the innermost dimension
+        printf("[");
+        for (int i = 0; i < shape[level]; i++) 
+        {
+            if (i < PRINT_LIMIT || i >= shape[level] - PRINT_LIMIT) 
+            {
+                printf("%f", data[indices[level]]);
+                if (i < shape[level] - 1) 
+                {
+                    printf(", ");
+                }
+            } 
+            else if (i == PRINT_LIMIT) 
+            {
+                printf("..., ");
+            }
+            indices[level]++;
+        }
+        printf("]");
+    } 
+    else 
+    {
+        // Print outer dimensions
+        printf("[");
+        int rows_to_print = (shape[level] <= 2 * PRINT_LIMIT) ? shape[level] : PRINT_LIMIT;
+
+        // Print the first part
+        for (int i = 0; i < rows_to_print; i++) 
+        {
+            if (i > 0) 
+            {
+                printf("\n%*s", (level + 1), ""); // Indentation for nested levels
+            }
+            print_tensor_data_recursive(data, shape, ndim, indices, level + 1);
+        }
+
+        // Handle ellipsis if needed
+        if (shape[level] > 2 * PRINT_LIMIT) 
+        {
+            printf("\n%*s...", (level + 1), "");  // Indentation for ellipsis
+            for (int i = shape[level] - PRINT_LIMIT; i < shape[level]; i++) 
+            {
+                printf("\n%*s", (level + 1), "");  // Correct indentation for rows after ellipsis
+                print_tensor_data_recursive(data, shape, ndim, indices, level + 1);
+            }
+        }
+        printf("]");
+    }
+}
+
+void print_tensor_data(Tensor *tensor) 
+{
+    int *indices = (int *)calloc(tensor->ndim, sizeof(int));
+    print_tensor_data_recursive(tensor->data, tensor->shape, tensor->ndim, indices, 0);
+    printf("\n");
+    free(indices);
 }
