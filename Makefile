@@ -40,7 +40,7 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.c | $(OBJDIR)
 
 # Create the shared library
 $(SHARED_LIB): $(OBJ) | $(LIBDIR)
-	$(CC) -shared -o $(SHARED_LIB) $(OBJ)
+	$(CC) -shared -o $(SHARED_LIB) $(OBJ) -lm
 
 # Clean up
 clean:

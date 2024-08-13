@@ -1,3 +1,4 @@
+#include <time.h>
 #include <stdio.h>
 #include <cortex.h>
 
@@ -38,9 +39,9 @@ void print_tensors()
     print_tensor_data(tensor4);
     printf("\n");
 
-    // Create an identity matrix tensor
-    Tensor *tensor5 = tensor_eye(3);
-    printf("Tensor 5 (identity matrix):\n");
+    // Create a tensor filled with a custom value
+    Tensor *tensor5 = tensor_full(shape1, ndim1, 2.0);
+    printf("Tensor 5 (full):\n");
     print_tensor_shape(tensor5);
     print_tensor_data(tensor5);
     printf("\n");
@@ -52,16 +53,17 @@ void print_tensors()
     print_tensor_data(tensor6);
 
     // Free tensors
-    free_tensor(tensor1);
-    free_tensor(tensor2);
-    free_tensor(tensor3);
-    free_tensor(tensor4);
-    free_tensor(tensor5);
-    free_tensor(tensor6);
+    tensor_free(tensor1);
+    tensor_free(tensor2);
+    tensor_free(tensor3);
+    tensor_free(tensor4);
+    tensor_free(tensor5);
+    tensor_free(tensor6);
 }
 
 int main()
 {
+    srand(time(NULL));
     print_tensors();
     return 0;
 }

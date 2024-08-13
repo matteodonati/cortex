@@ -1,20 +1,25 @@
 #ifndef TENSOR_H
 #define TENSOR_H
 
-typedef struct 
-{
+typedef struct Tensor {
     float *data;
+    float *grad;
     int *shape;
     int *stride;
     int ndim;
     int size;
+    void (*backward)(struct Tensor *self, struct Tensor *grad);
+    struct Tensor *grad_a;
+    struct Tensor *grad_b;
 } Tensor;
+
 
 Tensor* tensor_from_array(float *array, int *shape, int ndim);
 Tensor* tensor_rand(int *shape, int ndim);
 Tensor* tensor_zeros(int *shape, int ndim);
 Tensor* tensor_ones(int *shape, int ndim);
-Tensor* tensor_eye(int size);
-void free_tensor(Tensor *tensor);
+Tensor* tensor_full(int *shape, int ndim, float value);
+Tensor* allocate_tensor_with_same_shape(Tensor *a);
+void tensor_free(Tensor *tensor);
 
 #endif

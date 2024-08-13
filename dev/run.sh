@@ -10,16 +10,16 @@ BIN_DIR="$BASE_DIR/bin/$PROGRAM_NAME"
 # Create the binary directory if it doesn't exist
 mkdir -p "$BIN_DIR"
 
-# Uninstall the library silently
+# Uninstall the library 
 sudo make uninstall
 
-# Clean project directory silently
+# Clean project directory 
 make clean
 
-# Compile the library silently
+# Compile the library 
 make
 
-# Install the library silently
+# Install the library 
 sudo make install
 
 # Remove existing binary file
