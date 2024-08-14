@@ -1,5 +1,4 @@
 #include <math.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "ops/forward/forward.h"
@@ -276,6 +275,49 @@ Tensor* tensor_reshape(Tensor *tensor, int *new_shape, int new_ndim)
     }
 
     result->backward = &tensor_reshape_backward;
+    result->grad_a = tensor;
+
+    return result;
+}
+
+Tensor* tensor_transpose(Tensor *tensor, int *axes) 
+{
+    Tensor *result = (Tensor*)malloc(sizeof(Tensor));
+    result->ndim = tensor->ndim;
+    result->shape = (int*)malloc(result->ndim * sizeof(int));
+    result->stride = (int*)malloc(result->ndim * sizeof(int));
+    result->axes = (int*)malloc(result->ndim * sizeof(int));
+    result->size = tensor->size;
+    result->data = (float*)malloc(result->size * sizeof(float));
+    result->grad = (float*)calloc(result->size, sizeof(float));
+
+    for (int i = 0; i < result->ndim; i++) 
+    {
+        result->shape[i] = tensor->shape[axes[i]];
+        result->axes[i] = axes[i];
+    }
+
+    result->stride[result->ndim - 1] = 1;
+    for (int i = result->ndim - 2; i >= 0; i--) 
+    {
+        result->stride[i] = result->stride[i + 1] * result->shape[i + 1];
+    }
+
+    for (int i = 0; i < tensor->size; i++) 
+    {
+        int old_index = 0;
+        int new_index = i;
+
+        for (int j = 0; j < result->ndim; j++) {
+            int axis = axes[j];
+            int coord = new_index / result->stride[j];
+            new_index %= result->stride[j];
+            old_index += coord * tensor->stride[axis];
+        }
+        result->data[i] = tensor->data[old_index];
+    }
+
+    result->backward = &tensor_transpose_backward;
     result->grad_a = tensor;
 
     return result;

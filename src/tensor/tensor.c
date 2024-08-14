@@ -193,6 +193,10 @@ void tensor_free(Tensor *tensor)
         free(tensor->grad);
         free(tensor->shape);
         free(tensor->stride);
+        if (tensor->axes)
+        {
+            free(tensor->axes);
+        }
         free(tensor);
     }
 }

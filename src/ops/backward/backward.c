@@ -1,7 +1,8 @@
 #include <math.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include "ops/backward/backward.h"
+
+#include <stdio.h>
 
 void tensor_negate_backward(Tensor *self, float *grad) 
 {
@@ -224,4 +225,41 @@ void tensor_reshape_backward(Tensor *self, float *grad)
         tensor->backward(tensor, tensor->grad);
     }
 }
+
+void tensor_transpose_backward(Tensor *self, float *grad) 
+{
+    Tensor *tensor = self->grad_a;
+    int ndim = self->ndim;
+    int *reverse_axes = (int *)malloc(ndim * sizeof(int));
+
+    // Reverse the axes permutation stored in self->axes
+    for (int i = 0; i < ndim; i++) 
+    {
+        reverse_axes[self->axes[i]] = i;
+    }
+
+    // Accumulate gradients for the original tensor based on the reverse transpose
+    for (int i = 0; i < self->size; i++) 
+    {
+        int old_index = 0;
+        int new_index = i;
+
+        for (int j = 0; j < ndim; j++) 
+        {
+            int axis = reverse_axes[j];
+            int coord = new_index / self->stride[j];
+            new_index %= self->stride[j];
+            old_index += coord * tensor->stride[axis];
+        }
+        tensor->grad[old_index] += grad[i];
+    }
+
+    free(reverse_axes);
+
+    if (tensor->backward) 
+    {
+        tensor->backward(tensor, tensor->grad);
+    }
+}
+
 

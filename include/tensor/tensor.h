@@ -6,6 +6,7 @@ typedef struct Tensor {
     float *grad;
     int *shape;
     int *stride;
+    int *axes;
     int ndim;
     int size;
     void (*backward)(struct Tensor *self, float *grad);

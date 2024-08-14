@@ -13,5 +13,6 @@ void tensor_mul_backward(Tensor *self, float *grad);
 void tensor_div_backward(Tensor *self, float *grad);
 void tensor_matmul_backward(Tensor *self, float *grad);
 void tensor_reshape_backward(Tensor *self, float *grad);
+void tensor_transpose_backward(Tensor *self, float *grad);
 
 #endif
