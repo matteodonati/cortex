@@ -3,5 +3,7 @@
 
 #include "tensor/tensor.h"
 #include "tensor/utils/utils.h"
+#include "ops/forward/forward.h"
+#include "ops/backward/backward.h"
 
 #endif

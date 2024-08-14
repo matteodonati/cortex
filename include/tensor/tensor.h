@@ -8,7 +8,7 @@ typedef struct Tensor {
     int *stride;
     int ndim;
     int size;
-    void (*backward)(struct Tensor *self, struct Tensor *grad);
+    void (*backward)(struct Tensor *self, float *grad);
     struct Tensor *grad_a;
     struct Tensor *grad_b;
 } Tensor;
