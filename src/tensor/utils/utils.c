@@ -74,7 +74,14 @@ void print_tensor_array_recursive(float *array, int *shape, int ndim, int *indic
 void print_tensor_data(Tensor *tensor) 
 {
     int *indices = (int *)calloc(tensor->ndim, sizeof(int));
-    print_tensor_array_recursive(tensor->data, tensor->shape, tensor->ndim, indices, 0);
+    if (tensor->data)
+    {
+        print_tensor_array_recursive(tensor->data, tensor->shape, tensor->ndim, indices, 0);
+    }
+    else
+    {
+        printf("None");
+    }
     printf("\n");
     free(indices);
 }
@@ -82,7 +89,14 @@ void print_tensor_data(Tensor *tensor)
 void print_tensor_grad(Tensor *tensor) 
 {
     int *indices = (int *)calloc(tensor->ndim, sizeof(int));
-    print_tensor_array_recursive(tensor->grad, tensor->shape, tensor->ndim, indices, 0);
+    if (tensor->grad)
+    {
+        print_tensor_array_recursive(tensor->grad, tensor->shape, tensor->ndim, indices, 0);
+    }
+    else
+    {
+        printf("None");
+    }
     printf("\n");
     free(indices);
 }

@@ -1,4 +1,5 @@
 #include <math.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "ops/forward/forward.h"
@@ -64,8 +65,45 @@ Tensor* tensor_exp(Tensor *tensor)
     return result;
 }
 
+Tensor* tensor_log(Tensor *tensor)
+{
+    Tensor *result = allocate_tensor_with_same_shape(tensor);
+
+    for (int i = 0; i < tensor->size; i++)
+    {
+        result->data[i] = log(tensor->data[i]);
+    }
+
+    result->backward = &tensor_log_backward;
+    result->grad_a = tensor;
+
+    return result;
+}
+
+int check_shape_compatibility(Tensor *a, Tensor *b) 
+{
+    if (a->ndim != b->ndim) 
+    {
+        return 0;
+    }
+    for (int i = 0; i < a->ndim; i++) 
+    {
+        if (a->shape[i] != b->shape[i]) 
+        {
+            return 0;
+        }
+    }
+    return 1;
+}
+
 Tensor* tensor_add(Tensor *a, Tensor *b) 
 {
+    if (!check_shape_compatibility(a, b)) 
+    {
+        fprintf(stderr, "Error: Shape mismatch in tensor_add.\n");
+        exit(EXIT_FAILURE);
+    }
+
     Tensor *result = allocate_tensor_with_same_shape(a);
 
     if (a == b) 
@@ -92,6 +130,12 @@ Tensor* tensor_add(Tensor *a, Tensor *b)
 
 Tensor* tensor_sub(Tensor *a, Tensor *b) 
 {
+    if (!check_shape_compatibility(a, b)) 
+    {
+        fprintf(stderr, "Error: Shape mismatch in tensor_sub.\n");
+        exit(EXIT_FAILURE);
+    }
+
     Tensor *result = allocate_tensor_with_same_shape(a);
 
     if (a == b) 
@@ -118,6 +162,12 @@ Tensor* tensor_sub(Tensor *a, Tensor *b)
 
 Tensor* tensor_mul(Tensor *a, Tensor *b) 
 {
+    if (!check_shape_compatibility(a, b)) 
+    {
+        fprintf(stderr, "Error: Shape mismatch in tensor_mul.\n");
+        exit(EXIT_FAILURE);
+    }
+
     Tensor *result = allocate_tensor_with_same_shape(a);
 
     if (a == b) 
@@ -144,6 +194,12 @@ Tensor* tensor_mul(Tensor *a, Tensor *b)
 
 Tensor* tensor_div(Tensor *a, Tensor *b) 
 {
+    if (!check_shape_compatibility(a, b)) 
+    {
+        fprintf(stderr, "Error: Shape mismatch in tensor_div.\n");
+        exit(EXIT_FAILURE);
+    }
+
     Tensor *result = allocate_tensor_with_same_shape(a);
 
     if (a == b) 
@@ -319,6 +375,270 @@ Tensor* tensor_transpose(Tensor *tensor, int *axes)
 
     result->backward = &tensor_transpose_backward;
     result->grad_a = tensor;
+
+    return result;
+}
+
+Tensor* tensor_max(Tensor *tensor, int axis) 
+{
+    int new_ndim = tensor->ndim - 1;
+    int *new_shape = (int*)malloc(new_ndim * sizeof(int));
+
+    for (int i = 0, j = 0; i < tensor->ndim; i++) 
+    {
+        if (i != axis) 
+        {
+            new_shape[j++] = tensor->shape[i];
+        }
+    }
+
+    Tensor *result = (Tensor*)malloc(sizeof(Tensor));
+    result->ndim = new_ndim;
+    result->shape = new_shape;
+    result->stride = (int*)malloc(new_ndim * sizeof(int));
+    result->size = 1;
+    for (int i = 0; i < new_ndim; i++) 
+    {
+        result->size *= result->shape[i];
+    }
+    result->data = (float*)malloc(result->size * sizeof(float));
+    result->grad = (float*)calloc(result->size, sizeof(float));
+
+    result->stride[new_ndim - 1] = 1;
+    for (int i = new_ndim - 2; i >= 0; i--) 
+    {
+        result->stride[i] = result->stride[i + 1] * result->shape[i + 1];
+    }
+
+    // Initialize the result tensor data with negative infinity
+    for (int i = 0; i < result->size; i++) 
+    {
+        result->data[i] = -INFINITY;
+    }
+
+    // Perform the max operation
+    for (int i = 0; i < tensor->size; i++) 
+    {
+        int result_index = 0;
+        int old_index = i;
+
+        // Compute the index for the result tensor excluding the axis dimension
+        for (int d = tensor->ndim - 1, k = new_ndim - 1; d >= 0; d--) 
+        {
+            if (d == axis) 
+            {
+                continue;
+            }
+            int coord = (old_index / tensor->stride[d]) % tensor->shape[d];
+            result_index += coord * result->stride[k--];
+        }
+
+        // Update the result data
+        if (tensor->data[i] > result->data[result_index]) 
+        {
+            result->data[result_index] = tensor->data[i];
+        }
+    }
+
+    result->backward = &tensor_max_backward;
+    result->grad_a = tensor;
+
+    return result;
+}
+
+Tensor* tensor_min(Tensor *tensor, int axis) 
+{
+    int new_ndim = tensor->ndim - 1;
+    int *new_shape = (int*)malloc(new_ndim * sizeof(int));
+
+    for (int i = 0, j = 0; i < tensor->ndim; i++) 
+    {
+        if (i != axis) 
+        {
+            new_shape[j++] = tensor->shape[i];
+        }
+    }
+
+    Tensor *result = (Tensor*)malloc(sizeof(Tensor));
+    result->ndim = new_ndim;
+    result->shape = new_shape;
+    result->stride = (int*)malloc(new_ndim * sizeof(int));
+    result->size = 1;
+    for (int i = 0; i < new_ndim; i++) 
+    {
+        result->size *= result->shape[i];
+    }
+    result->data = (float*)malloc(result->size * sizeof(float));
+    result->grad = (float*)calloc(result->size, sizeof(float));
+
+    result->stride[new_ndim - 1] = 1;
+    for (int i = new_ndim - 2; i >= 0; i--) 
+    {
+        result->stride[i] = result->stride[i + 1] * result->shape[i + 1];
+    }
+
+    // Initialize the result tensor data with positive infinity
+    for (int i = 0; i < result->size; i++) 
+    {
+        result->data[i] = INFINITY;
+    }
+
+    // Perform the min operation
+    for (int i = 0; i < tensor->size; i++) 
+    {
+        int result_index = 0;
+        int old_index = i;
+
+        // Compute the index for the result tensor excluding the axis dimension
+        for (int d = tensor->ndim - 1, k = new_ndim - 1; d >= 0; d--) 
+        {
+            if (d == axis)
+            {
+                continue;
+            }
+            int coord = (old_index / tensor->stride[d]) % tensor->shape[d];
+            result_index += coord * result->stride[k--];
+        }
+
+        // Update the result data
+        if (tensor->data[i] < result->data[result_index]) 
+        {
+            result->data[result_index] = tensor->data[i];
+        }
+    }
+
+    result->backward = &tensor_min_backward;
+    result->grad_a = tensor;
+
+    return result;
+}
+
+Tensor* tensor_argmax(Tensor *tensor, int axis) 
+{
+    int new_ndim = tensor->ndim - 1;
+    int *new_shape = (int*)malloc(new_ndim * sizeof(int));
+
+    // Determine the new shape after removing the axis dimension
+    for (int i = 0, j = 0; i < tensor->ndim; i++) 
+    {
+        if (i != axis) 
+        {
+            new_shape[j++] = tensor->shape[i];
+        }
+    }
+
+    Tensor *result = (Tensor*)malloc(sizeof(Tensor));
+    result->ndim = new_ndim;
+    result->shape = new_shape;
+    result->stride = (int*)malloc(new_ndim * sizeof(int));
+    result->size = 1;
+    for (int i = 0; i < new_ndim; i++) 
+    {
+        result->size *= result->shape[i];
+    }
+    result->data = (float*)malloc(result->size * sizeof(float));
+    result->grad = NULL; // No gradient for argmax
+
+    result->stride[new_ndim - 1] = 1;
+    for (int i = new_ndim - 2; i >= 0; i--) 
+    {
+        result->stride[i] = result->stride[i + 1] * result->shape[i + 1];
+    }
+
+    // Initialize the result tensor data with -1 (invalid index)
+    for (int i = 0; i < result->size; i++) 
+    {
+        result->data[i] = -1;
+    }
+
+    // Perform the argmax operation
+    for (int i = 0; i < tensor->size; i++) 
+    {
+        int result_index = 0;
+        int old_index = i;
+
+        // Compute the index for the result tensor excluding the axis dimension
+        for (int d = tensor->ndim - 1, k = new_ndim - 1; d >= 0; d--) 
+        {
+            if (d == axis) 
+            {
+                continue;
+            }
+            int coord = (old_index / tensor->stride[d]) % tensor->shape[d];
+            result_index += coord * result->stride[k--];
+        }
+
+        // Update the result data with the index where the max value is found
+        if (result->data[result_index] == -1 || tensor->data[i] > tensor->data[result_index * tensor->shape[axis] + old_index % tensor->stride[axis]]) 
+        {
+            result->data[result_index] = old_index / tensor->stride[axis] % tensor->shape[axis];
+        }
+    }
+
+    return result;
+}
+
+Tensor* tensor_argmin(Tensor *tensor, int axis) 
+{
+    int new_ndim = tensor->ndim - 1;
+    int *new_shape = (int*)malloc(new_ndim * sizeof(int));
+
+    // Determine the new shape after removing the axis dimension
+    for (int i = 0, j = 0; i < tensor->ndim; i++) 
+    {
+        if (i != axis) 
+        {
+            new_shape[j++] = tensor->shape[i];
+        }
+    }
+
+    Tensor *result = (Tensor*)malloc(sizeof(Tensor));
+    result->ndim = new_ndim;
+    result->shape = new_shape;
+    result->stride = (int*)malloc(new_ndim * sizeof(int));
+    result->size = 1;
+    for (int i = 0; i < new_ndim; i++) 
+    {
+        result->size *= result->shape[i];
+    }
+    result->data = (float*)malloc(result->size * sizeof(float));
+    result->grad = NULL; // No gradient for argmin
+
+    result->stride[new_ndim - 1] = 1;
+    for (int i = new_ndim - 2; i >= 0; i--) 
+    {
+        result->stride[i] = result->stride[i + 1] * result->shape[i + 1];
+    }
+
+    // Initialize the result tensor data with -1 (invalid index)
+    for (int i = 0; i < result->size; i++) 
+    {
+        result->data[i] = -1;
+    }
+
+    // Perform the argmin operation
+    for (int i = 0; i < tensor->size; i++) 
+    {
+        int result_index = 0;
+        int old_index = i;
+
+        // Compute the index for the result tensor excluding the axis dimension
+        for (int d = tensor->ndim - 1, k = new_ndim - 1; d >= 0; d--) 
+        {
+            if (d == axis) 
+            {
+                continue;
+            }
+            int coord = (old_index / tensor->stride[d]) % tensor->shape[d];
+            result_index += coord * result->stride[k--];
+        }
+
+        // Update the result data with the index where the min value is found
+        if (result->data[result_index] == -1 || tensor->data[i] < tensor->data[result_index * tensor->shape[axis] + old_index % tensor->stride[axis]]) 
+        {
+            result->data[result_index] = old_index / tensor->stride[axis] % tensor->shape[axis];
+        }
+    }
 
     return result;
 }

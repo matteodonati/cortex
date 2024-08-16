@@ -64,6 +64,21 @@ void tensor_exp_backward(Tensor *self, float *grad)
     }
 }
 
+void tensor_log_backward(Tensor *self, float *grad)
+{
+    Tensor *tensor = self->grad_a;
+
+    for (int i = 0; i < self->size; i++)
+    {
+        tensor->grad[i] += grad[i] / tensor->data[i];
+    }
+
+    if (tensor->backward)
+    {
+        tensor->backward(tensor, tensor->grad);
+    }
+}
+
 void tensor_add_backward(Tensor *self, float *grad) 
 {
     Tensor *a = self->grad_a;
@@ -262,4 +277,94 @@ void tensor_transpose_backward(Tensor *self, float *grad)
     }
 }
 
+void tensor_max_backward(Tensor *self, float *grad) 
+{
+    Tensor *tensor = self->grad_a;
 
+    // Determine the axis along which max was computed by comparing tensor and self shapes
+    int axis = -1;
+    for (int i = 0, j = 0; i < tensor->ndim; i++) 
+    {
+        if (j < self->ndim && tensor->shape[i] == self->shape[j]) 
+        {
+            j++;
+        } 
+        else 
+        {
+            axis = i;
+            break;
+        }
+    }
+
+    for (int i = 0; i < tensor->size; i++) 
+    {
+        int result_index = 0;
+        int old_index = i;
+
+        for (int d = tensor->ndim - 1, k = self->ndim - 1; d >= 0; d--) 
+        {
+            if (d == axis)
+            {
+                continue;
+            }
+            int coord = (old_index / tensor->stride[d]) % tensor->shape[d];
+            result_index += coord * self->stride[k--];
+        }
+
+        if (tensor->data[i] == self->data[result_index]) 
+        {
+            tensor->grad[i] += grad[result_index];
+        }
+    }
+
+    if (tensor->backward) 
+    {
+        tensor->backward(tensor, tensor->grad);
+    }
+}
+
+void tensor_min_backward(Tensor *self, float *grad) 
+{
+    Tensor *tensor = self->grad_a;
+
+    // Determine the axis along which min was computed by comparing tensor and self shapes
+    int axis = -1;
+    for (int i = 0, j = 0; i < tensor->ndim; i++) 
+    {
+        if (j < self->ndim && tensor->shape[i] == self->shape[j]) 
+        {
+            j++;
+        } 
+        else 
+        {
+            axis = i;
+            break;
+        }
+    }
+
+    for (int i = 0; i < tensor->size; i++) 
+    {
+        int result_index = 0;
+        int old_index = i;
+
+        for (int d = tensor->ndim - 1, k = self->ndim - 1; d >= 0; d--) 
+        {
+            if (d == axis)
+            {
+                continue;
+            }
+            int coord = (old_index / tensor->stride[d]) % tensor->shape[d];
+            result_index += coord * self->stride[k--];
+        }
+
+        if (tensor->data[i] == self->data[result_index]) 
+        {
+            tensor->grad[i] += grad[result_index];
+        }
+    }
+
+    if (tensor->backward) 
+    {
+        tensor->backward(tensor, tensor->grad);
+    }
+}
