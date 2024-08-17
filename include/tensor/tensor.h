@@ -14,6 +14,7 @@ typedef struct Tensor {
     struct Tensor *grad_b;
 } Tensor;
 
+Tensor* initialize_tensor(int *shape, int ndim);
 Tensor* tensor_from_array(float *array, int *shape, int ndim);
 Tensor* tensor_rand(int *shape, int ndim);
 Tensor* tensor_zeros(int *shape, int ndim);

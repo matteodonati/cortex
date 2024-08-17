@@ -266,6 +266,12 @@ Tensor* tensor_scalar_mul(Tensor *tensor, float scalar)
 
 Tensor* tensor_matmul(Tensor *a, Tensor *b) 
 {
+    if (a == NULL || b == NULL) 
+    {
+        fprintf(stderr, "Error: One of the input tensors is NULL in tensor_matmul.\n");
+        exit(EXIT_FAILURE);
+    }
+
     int a_ndim = a->ndim;
     int b_ndim = b->ndim;
 
@@ -273,23 +279,22 @@ Tensor* tensor_matmul(Tensor *a, Tensor *b)
     if (a_ndim == 1) 
     {
         a = tensor_reshape(a, (int[]){1, a->size}, 2);
-        a_ndim = 2;  // Update ndim after reshaping
+        a_ndim = 2;
     }
     if (b_ndim == 1) 
     {
         b = tensor_reshape(b, (int[]){b->size, 1}, 2);
-        b_ndim = 2;  // Update ndim after reshaping
+        b_ndim = 2;
     }
 
     int m = a->shape[a->ndim - 2];
     int k = a->shape[a->ndim - 1];
     int n = b->shape[b->ndim - 1];
 
-    // Determine the output shape and size
+    // Determine the output shape
     int out_ndim = (a_ndim > b_ndim) ? a_ndim : b_ndim;
     int *out_shape = (int*)malloc(out_ndim * sizeof(int));
     int *out_stride = (int*)malloc(out_ndim * sizeof(int));
-
     for (int i = 0; i < out_ndim - 2; i++) 
     {
         out_shape[i] = (a->ndim >= b->ndim) ? a->shape[i] : b->shape[i];
@@ -297,19 +302,17 @@ Tensor* tensor_matmul(Tensor *a, Tensor *b)
     out_shape[out_ndim - 2] = m;
     out_shape[out_ndim - 1] = n;
 
+    // Create the result Tensor
     Tensor *result = (Tensor*)malloc(sizeof(Tensor));
     result->shape = out_shape;
     result->stride = out_stride;
     result->ndim = out_ndim;
     result->size = 1;
-
-    // Calculate the strides for the result tensor
     result->stride[out_ndim - 1] = 1;
     for (int i = out_ndim - 2; i >= 0; i--) 
     {
         result->stride[i] = result->stride[i + 1] * result->shape[i + 1];
     }
-
     for (int i = 0; i < out_ndim; i++) 
     {
         result->size *= out_shape[i];
@@ -317,8 +320,8 @@ Tensor* tensor_matmul(Tensor *a, Tensor *b)
     result->data = (float*)malloc(result->size * sizeof(float));
     result->grad = (float*)calloc(result->size, sizeof(float));
 
+    // Perform matrix multiplication
     int batch_size = result->size / (m * n);
-
     for (int batch = 0; batch < batch_size; batch++) 
     {
         for (int i = 0; i < m; i++) 
@@ -346,30 +349,15 @@ Tensor* tensor_matmul(Tensor *a, Tensor *b)
 
 Tensor* tensor_reshape(Tensor *tensor, int *new_shape, int new_ndim) 
 {
-    Tensor *result = (Tensor*)malloc(sizeof(Tensor));
-    
-    result->ndim = new_ndim;
-    result->shape = (int*)malloc(new_ndim * sizeof(int));
-    result->stride = (int*)malloc(new_ndim * sizeof(int));
-
-    result->size = 1;
-    for (int i = 0; i < new_ndim; i++) 
+    if (tensor == NULL) 
     {
-        result->shape[i] = new_shape[i];
-        result->size *= new_shape[i];
+        fprintf(stderr, "Error: Input tensor is NULL in tensor_reshape.\n");
+        exit(EXIT_FAILURE);
     }
 
-    result->data = (float*)malloc(result->size * sizeof(float));
-    result->grad = (float*)malloc(result->size * sizeof(float));
+    Tensor *result = tensor_zeros(new_shape, new_ndim);
     memcpy(result->data, tensor->data, tensor->size * sizeof(float));
     memcpy(result->grad, tensor->grad, tensor->size * sizeof(float));
-
-    result->stride[new_ndim - 1] = 1;
-    for (int i = new_ndim - 2; i >= 0; i--) 
-    {
-        result->stride[i] = result->stride[i + 1] * result->shape[i + 1];
-    }
-
     result->backward = &tensor_reshape_backward;
     result->grad_a = tensor;
 
@@ -378,14 +366,14 @@ Tensor* tensor_reshape(Tensor *tensor, int *new_shape, int new_ndim)
 
 Tensor* tensor_transpose(Tensor *tensor, int *axes) 
 {
-    Tensor *result = (Tensor*)malloc(sizeof(Tensor));
-    result->ndim = tensor->ndim;
-    result->shape = (int*)malloc(result->ndim * sizeof(int));
-    result->stride = (int*)malloc(result->ndim * sizeof(int));
+    if (tensor == NULL) 
+    {
+        fprintf(stderr, "Error: Input tensor is NULL in tensor_transpose.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    Tensor *result = tensor_zeros(tensor->shape, tensor->ndim);
     result->axes = (int*)malloc(result->ndim * sizeof(int));
-    result->size = tensor->size;
-    result->data = (float*)malloc(result->size * sizeof(float));
-    result->grad = (float*)calloc(result->size, sizeof(float));
 
     for (int i = 0; i < result->ndim; i++) 
     {
@@ -421,6 +409,12 @@ Tensor* tensor_transpose(Tensor *tensor, int *axes)
 
 Tensor* tensor_max(Tensor *tensor, int axis) 
 {
+    if (tensor == NULL) 
+    {
+        fprintf(stderr, "Error: Input tensor is NULL in tensor_max.\n");
+        exit(EXIT_FAILURE);
+    }
+
     int new_ndim = tensor->ndim - 1;
     int *new_shape = (int*)malloc(new_ndim * sizeof(int));
 
@@ -432,23 +426,7 @@ Tensor* tensor_max(Tensor *tensor, int axis)
         }
     }
 
-    Tensor *result = (Tensor*)malloc(sizeof(Tensor));
-    result->ndim = new_ndim;
-    result->shape = new_shape;
-    result->stride = (int*)malloc(new_ndim * sizeof(int));
-    result->size = 1;
-    for (int i = 0; i < new_ndim; i++) 
-    {
-        result->size *= result->shape[i];
-    }
-    result->data = (float*)malloc(result->size * sizeof(float));
-    result->grad = (float*)calloc(result->size, sizeof(float));
-
-    result->stride[new_ndim - 1] = 1;
-    for (int i = new_ndim - 2; i >= 0; i--) 
-    {
-        result->stride[i] = result->stride[i + 1] * result->shape[i + 1];
-    }
+    Tensor *result = tensor_zeros(new_shape, new_ndim);
 
     // Initialize the result tensor data with negative infinity
     for (int i = 0; i < result->size; i++) 
@@ -488,6 +466,12 @@ Tensor* tensor_max(Tensor *tensor, int axis)
 
 Tensor* tensor_min(Tensor *tensor, int axis) 
 {
+    if (tensor == NULL) 
+    {
+        fprintf(stderr, "Error: Input tensor is NULL in tensor_min.\n");
+        exit(EXIT_FAILURE);
+    }
+
     int new_ndim = tensor->ndim - 1;
     int *new_shape = (int*)malloc(new_ndim * sizeof(int));
 
@@ -499,23 +483,7 @@ Tensor* tensor_min(Tensor *tensor, int axis)
         }
     }
 
-    Tensor *result = (Tensor*)malloc(sizeof(Tensor));
-    result->ndim = new_ndim;
-    result->shape = new_shape;
-    result->stride = (int*)malloc(new_ndim * sizeof(int));
-    result->size = 1;
-    for (int i = 0; i < new_ndim; i++) 
-    {
-        result->size *= result->shape[i];
-    }
-    result->data = (float*)malloc(result->size * sizeof(float));
-    result->grad = (float*)calloc(result->size, sizeof(float));
-
-    result->stride[new_ndim - 1] = 1;
-    for (int i = new_ndim - 2; i >= 0; i--) 
-    {
-        result->stride[i] = result->stride[i + 1] * result->shape[i + 1];
-    }
+    Tensor *result = tensor_zeros(new_shape, new_ndim);
 
     // Initialize the result tensor data with positive infinity
     for (int i = 0; i < result->size; i++) 
@@ -555,10 +523,15 @@ Tensor* tensor_min(Tensor *tensor, int axis)
 
 Tensor* tensor_argmax(Tensor *tensor, int axis) 
 {
+    if (tensor == NULL) 
+    {
+        fprintf(stderr, "Error: Input tensor is NULL in tensor_argmax.\n");
+        exit(EXIT_FAILURE);
+    }
+
     int new_ndim = tensor->ndim - 1;
     int *new_shape = (int*)malloc(new_ndim * sizeof(int));
 
-    // Determine the new shape after removing the axis dimension
     for (int i = 0, j = 0; i < tensor->ndim; i++) 
     {
         if (i != axis) 
@@ -567,23 +540,8 @@ Tensor* tensor_argmax(Tensor *tensor, int axis)
         }
     }
 
-    Tensor *result = (Tensor*)malloc(sizeof(Tensor));
-    result->ndim = new_ndim;
-    result->shape = new_shape;
-    result->stride = (int*)malloc(new_ndim * sizeof(int));
-    result->size = 1;
-    for (int i = 0; i < new_ndim; i++) 
-    {
-        result->size *= result->shape[i];
-    }
-    result->data = (float*)malloc(result->size * sizeof(float));
+    Tensor *result = tensor_zeros(new_shape, new_ndim);
     result->grad = NULL; // No gradient for argmax
-
-    result->stride[new_ndim - 1] = 1;
-    for (int i = new_ndim - 2; i >= 0; i--) 
-    {
-        result->stride[i] = result->stride[i + 1] * result->shape[i + 1];
-    }
 
     // Initialize the result tensor data with -1 (invalid index)
     for (int i = 0; i < result->size; i++) 
@@ -597,7 +555,6 @@ Tensor* tensor_argmax(Tensor *tensor, int axis)
         int result_index = 0;
         int old_index = i;
 
-        // Compute the index for the result tensor excluding the axis dimension
         for (int d = tensor->ndim - 1, k = new_ndim - 1; d >= 0; d--) 
         {
             if (d == axis) 
@@ -608,8 +565,7 @@ Tensor* tensor_argmax(Tensor *tensor, int axis)
             result_index += coord * result->stride[k--];
         }
 
-        // Update the result data with the index where the max value is found
-        if (result->data[result_index] == -1 || tensor->data[i] > tensor->data[result_index * tensor->shape[axis] + old_index % tensor->stride[axis]]) 
+        if (result->data[result_index] == -1 || tensor->data[i] > tensor->data[(int)result->data[result_index] * tensor->stride[axis] + old_index % tensor->stride[axis]]) 
         {
             result->data[result_index] = old_index / tensor->stride[axis] % tensor->shape[axis];
         }
@@ -620,10 +576,15 @@ Tensor* tensor_argmax(Tensor *tensor, int axis)
 
 Tensor* tensor_argmin(Tensor *tensor, int axis) 
 {
+    if (tensor == NULL) 
+    {
+        fprintf(stderr, "Error: Input tensor is NULL in tensor_argmin.\n");
+        exit(EXIT_FAILURE);
+    }
+
     int new_ndim = tensor->ndim - 1;
     int *new_shape = (int*)malloc(new_ndim * sizeof(int));
 
-    // Determine the new shape after removing the axis dimension
     for (int i = 0, j = 0; i < tensor->ndim; i++) 
     {
         if (i != axis) 
@@ -632,23 +593,8 @@ Tensor* tensor_argmin(Tensor *tensor, int axis)
         }
     }
 
-    Tensor *result = (Tensor*)malloc(sizeof(Tensor));
-    result->ndim = new_ndim;
-    result->shape = new_shape;
-    result->stride = (int*)malloc(new_ndim * sizeof(int));
-    result->size = 1;
-    for (int i = 0; i < new_ndim; i++) 
-    {
-        result->size *= result->shape[i];
-    }
-    result->data = (float*)malloc(result->size * sizeof(float));
+    Tensor *result = tensor_zeros(new_shape, new_ndim);
     result->grad = NULL; // No gradient for argmin
-
-    result->stride[new_ndim - 1] = 1;
-    for (int i = new_ndim - 2; i >= 0; i--) 
-    {
-        result->stride[i] = result->stride[i + 1] * result->shape[i + 1];
-    }
 
     // Initialize the result tensor data with -1 (invalid index)
     for (int i = 0; i < result->size; i++) 
@@ -662,7 +608,6 @@ Tensor* tensor_argmin(Tensor *tensor, int axis)
         int result_index = 0;
         int old_index = i;
 
-        // Compute the index for the result tensor excluding the axis dimension
         for (int d = tensor->ndim - 1, k = new_ndim - 1; d >= 0; d--) 
         {
             if (d == axis) 
@@ -673,8 +618,7 @@ Tensor* tensor_argmin(Tensor *tensor, int axis)
             result_index += coord * result->stride[k--];
         }
 
-        // Update the result data with the index where the min value is found
-        if (result->data[result_index] == -1 || tensor->data[i] < tensor->data[result_index * tensor->shape[axis] + old_index % tensor->stride[axis]]) 
+        if (result->data[result_index] == -1 || tensor->data[i] < tensor->data[(int)result->data[result_index] * tensor->stride[axis] + old_index % tensor->stride[axis]]) 
         {
             result->data[result_index] = old_index / tensor->stride[axis] % tensor->shape[axis];
         }
@@ -685,6 +629,12 @@ Tensor* tensor_argmin(Tensor *tensor, int axis)
 
 Tensor* tensor_sum(Tensor *tensor, int axis) 
 {
+    if (tensor == NULL) 
+    {
+        fprintf(stderr, "Error: Input tensor is NULL in tensor_sum.\n");
+        exit(EXIT_FAILURE);
+    }
+
     int new_ndim = tensor->ndim - 1;
     int *new_shape = (int*)malloc(new_ndim * sizeof(int));
 
@@ -696,26 +646,7 @@ Tensor* tensor_sum(Tensor *tensor, int axis)
         }
     }
 
-    Tensor *result = (Tensor*)malloc(sizeof(Tensor));
-    result->ndim = new_ndim;
-    result->shape = new_shape;
-    result->stride = (int*)malloc(new_ndim * sizeof(int));
-    result->size = 1;
-    for (int i = 0; i < new_ndim; i++) 
-    {
-        result->size *= result->shape[i];
-    }
-    result->data = (float*)malloc(result->size * sizeof(float));
-    result->grad = (float*)calloc(result->size, sizeof(float));
-
-    result->stride[new_ndim - 1] = 1;
-    for (int i = new_ndim - 2; i >= 0; i--) 
-    {
-        result->stride[i] = result->stride[i + 1] * result->shape[i + 1];
-    }
-
-    // Initialize the result tensor data with zeros
-    memset(result->data, 0, result->size * sizeof(float));
+    Tensor *result = tensor_zeros(new_shape, new_ndim);
 
     // Perform the sum operation
     for (int i = 0; i < tensor->size; i++) 
@@ -723,7 +654,6 @@ Tensor* tensor_sum(Tensor *tensor, int axis)
         int result_index = 0;
         int old_index = i;
 
-        // Compute the index for the result tensor excluding the axis dimension
         for (int d = tensor->ndim - 1, k = new_ndim - 1; d >= 0; d--) 
         {
             if (d == axis) 
@@ -745,6 +675,12 @@ Tensor* tensor_sum(Tensor *tensor, int axis)
 
 Tensor* tensor_mean(Tensor *tensor, int axis) 
 {
+    if (tensor == NULL) 
+    {
+        fprintf(stderr, "Error: Input tensor is NULL in tensor_mean.\n");
+        exit(EXIT_FAILURE);
+    }
+
     Tensor *sum_result = tensor_sum(tensor, axis);
     
     int divisor = tensor->shape[axis];
@@ -761,41 +697,19 @@ Tensor* tensor_mean(Tensor *tensor, int axis)
 
 Tensor* tensor_cat(Tensor *a, Tensor *b, int axis) 
 {
-    // Check if the tensors can be concatenated along the given axis
-    for (int i = 0; i < a->ndim; i++) 
+    if (a == NULL || b == NULL) 
     {
-        if (i != axis && a->shape[i] != b->shape[i]) 
-        {
-            fprintf(stderr, "Error: Tensors cannot be concatenated along axis due to shape mismatch.\n");
-            exit(EXIT_FAILURE);
-        }
+        fprintf(stderr, "Error: One of the input tensors is NULL in tensor_cat.\n");
+        exit(EXIT_FAILURE);
     }
 
-    // Calculate the shape of the result tensor
     int *new_shape = (int *)malloc(a->ndim * sizeof(int));
     for (int i = 0; i < a->ndim; i++) 
     {
         new_shape[i] = (i == axis) ? (a->shape[i] + b->shape[i]) : a->shape[i];
     }
 
-    Tensor *result = (Tensor *)malloc(sizeof(Tensor));
-    result->ndim = a->ndim;
-    result->shape = new_shape;
-    result->stride = (int *)malloc(result->ndim * sizeof(int));
-
-    result->size = 1;
-    for (int i = 0; i < result->ndim; i++) 
-    {
-        result->size *= result->shape[i];
-    }
-    result->data = (float *)malloc(result->size * sizeof(float));
-    result->grad = (float *)calloc(result->size, sizeof(float));
-
-    result->stride[result->ndim - 1] = 1;
-    for (int i = result->ndim - 2; i >= 0; i--) 
-    {
-        result->stride[i] = result->stride[i + 1] * result->shape[i + 1];
-    }
+    Tensor *result = tensor_zeros(new_shape, a->ndim);
 
     // Copy data from the first tensor to the result tensor
     for (int i = 0; i < a->size; i++) 
