@@ -8,13 +8,17 @@
 
 Tensor* tensor_negate(Tensor *tensor) 
 {
-    Tensor *result = tensor_like(tensor);
+    if (tensor == NULL) 
+    {
+        fprintf(stderr, "Error: Input tensor is NULL in tensor_negate.\n");
+        exit(EXIT_FAILURE);
+    }
 
+    Tensor *result = tensor_like(tensor);
     for (int i = 0; i < tensor->size; i++) 
     {
         result->data[i] = -tensor->data[i];
     }
-
     result->backward = &tensor_negate_backward;
     result->grad_a = tensor;
 
@@ -23,13 +27,17 @@ Tensor* tensor_negate(Tensor *tensor)
 
 Tensor* tensor_abs(Tensor *tensor) 
 {
-    Tensor *result = tensor_like(tensor);
+    if (tensor == NULL) 
+    {
+        fprintf(stderr, "Error: Input tensor is NULL in tensor_abs.\n");
+        exit(EXIT_FAILURE);
+    }
 
+    Tensor *result = tensor_like(tensor);
     for (int i = 0; i < tensor->size; i++) 
     {
         result->data[i] = fabs(tensor->data[i]);
     }
-
     result->backward = &tensor_abs_backward;
     result->grad_a = tensor;
 
@@ -38,13 +46,17 @@ Tensor* tensor_abs(Tensor *tensor)
 
 Tensor* tensor_sqrt(Tensor *tensor) 
 {
-    Tensor *result = tensor_like(tensor);
+    if (tensor == NULL) 
+    {
+        fprintf(stderr, "Error: Input tensor is NULL in tensor_sqrt.\n");
+        exit(EXIT_FAILURE);
+    }
 
+    Tensor *result = tensor_like(tensor);
     for (int i = 0; i < tensor->size; i++) 
     {
         result->data[i] = sqrt(tensor->data[i]);
     }
-
     result->backward = &tensor_sqrt_backward;
     result->grad_a = tensor;
 
@@ -53,13 +65,17 @@ Tensor* tensor_sqrt(Tensor *tensor)
 
 Tensor* tensor_exp(Tensor *tensor) 
 {
-    Tensor *result = tensor_like(tensor);
+    if (tensor == NULL) 
+    {
+        fprintf(stderr, "Error: Input tensor is NULL in tensor_exp.\n");
+        exit(EXIT_FAILURE);
+    }
 
+    Tensor *result = tensor_like(tensor);
     for (int i = 0; i < tensor->size; i++) 
     {
         result->data[i] = exp(tensor->data[i]);
     }
-
     result->backward = &tensor_exp_backward;
     result->grad_a = tensor;
 
@@ -68,13 +84,17 @@ Tensor* tensor_exp(Tensor *tensor)
 
 Tensor* tensor_log(Tensor *tensor)
 {
-    Tensor *result = tensor_like(tensor);
+    if (tensor == NULL) 
+    {
+        fprintf(stderr, "Error: Input tensor is NULL in tensor_log.\n");
+        exit(EXIT_FAILURE);
+    }
 
+    Tensor *result = tensor_like(tensor);
     for (int i = 0; i < tensor->size; i++)
     {
         result->data[i] = log(tensor->data[i]);
     }
-
     result->backward = &tensor_log_backward;
     result->grad_a = tensor;
 
@@ -83,6 +103,12 @@ Tensor* tensor_log(Tensor *tensor)
 
 Tensor* tensor_add(Tensor *a, Tensor *b) 
 {
+    if (a == NULL || b == NULL) 
+    {
+        fprintf(stderr, "Error: One of the input tensors is NULL in tensor_add.\n");
+        exit(EXIT_FAILURE);
+    }
+
     if (!check_shape_compatibility(a, b)) 
     {
         fprintf(stderr, "Error: Shape mismatch in tensor_add.\n");
@@ -90,7 +116,6 @@ Tensor* tensor_add(Tensor *a, Tensor *b)
     }
 
     Tensor *result = tensor_like(a);
-
     if (a == b) 
     {
         for (int i = 0; i < a->size; i++) 
@@ -105,7 +130,6 @@ Tensor* tensor_add(Tensor *a, Tensor *b)
             result->data[i] = a->data[i] + b->data[i];
         }
     }
-
     result->backward = &tensor_add_backward;
     result->grad_a = a;
     result->grad_b = b;
@@ -115,6 +139,12 @@ Tensor* tensor_add(Tensor *a, Tensor *b)
 
 Tensor* tensor_sub(Tensor *a, Tensor *b) 
 {
+    if (a == NULL || b == NULL) 
+    {
+        fprintf(stderr, "Error: One of the input tensors is NULL in tensor_sub.\n");
+        exit(EXIT_FAILURE);
+    }
+
     if (!check_shape_compatibility(a, b)) 
     {
         fprintf(stderr, "Error: Shape mismatch in tensor_sub.\n");
@@ -122,7 +152,6 @@ Tensor* tensor_sub(Tensor *a, Tensor *b)
     }
 
     Tensor *result = tensor_like(a);
-
     if (a == b) 
     {
         for (int i = 0; i < a->size; i++) 
@@ -137,7 +166,6 @@ Tensor* tensor_sub(Tensor *a, Tensor *b)
             result->data[i] = a->data[i] - b->data[i];
         }
     }
-
     result->backward = &tensor_sub_backward;
     result->grad_a = a;
     result->grad_b = b;
@@ -147,6 +175,12 @@ Tensor* tensor_sub(Tensor *a, Tensor *b)
 
 Tensor* tensor_mul(Tensor *a, Tensor *b) 
 {
+    if (a == NULL || b == NULL) 
+    {
+        fprintf(stderr, "Error: One of the input tensors is NULL in tensor_mul.\n");
+        exit(EXIT_FAILURE);
+    }
+
     if (!check_shape_compatibility(a, b)) 
     {
         fprintf(stderr, "Error: Shape mismatch in tensor_mul.\n");
@@ -154,7 +188,6 @@ Tensor* tensor_mul(Tensor *a, Tensor *b)
     }
 
     Tensor *result = tensor_like(a);
-
     if (a == b) 
     {
         for (int i = 0; i < a->size; i++) 
@@ -169,7 +202,6 @@ Tensor* tensor_mul(Tensor *a, Tensor *b)
             result->data[i] = a->data[i] * b->data[i];
         }
     }
-
     result->backward = &tensor_mul_backward;
     result->grad_a = a;
     result->grad_b = b;
@@ -179,6 +211,12 @@ Tensor* tensor_mul(Tensor *a, Tensor *b)
 
 Tensor* tensor_div(Tensor *a, Tensor *b) 
 {
+    if (a == NULL || b == NULL) 
+    {
+        fprintf(stderr, "Error: One of the input tensors is NULL in tensor_div.\n");
+        exit(EXIT_FAILURE);
+    }
+
     if (!check_shape_compatibility(a, b)) 
     {
         fprintf(stderr, "Error: Shape mismatch in tensor_div.\n");
@@ -186,7 +224,6 @@ Tensor* tensor_div(Tensor *a, Tensor *b)
     }
 
     Tensor *result = tensor_like(a);
-
     if (a == b) 
     {
         for (int i = 0; i < a->size; i++) 
@@ -201,7 +238,6 @@ Tensor* tensor_div(Tensor *a, Tensor *b)
             result->data[i] = a->data[i] / b->data[i];
         }
     }
-
     result->backward = &tensor_div_backward;
     result->grad_a = a;
     result->grad_b = b;
@@ -211,19 +247,22 @@ Tensor* tensor_div(Tensor *a, Tensor *b)
 
 Tensor* tensor_scalar_mul(Tensor *tensor, float scalar) 
 {
-    Tensor *result = tensor_like(tensor);
+    if (tensor == NULL) 
+    {
+        fprintf(stderr, "Error: Input tensor is NULL in tensor_scalar_mul.\n");
+        exit(EXIT_FAILURE);
+    }
 
+    Tensor *result = tensor_like(tensor);
     for (int i = 0; i < tensor->size; i++) 
     {
         result->data[i] = tensor->data[i] * scalar;
     }
-
     result->backward = &tensor_scalar_mul_backward;
     result->grad_a = tensor;
 
     return result;
 }
-
 
 Tensor* tensor_matmul(Tensor *a, Tensor *b) 
 {
