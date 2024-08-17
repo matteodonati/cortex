@@ -80,22 +80,6 @@ Tensor* tensor_log(Tensor *tensor)
     return result;
 }
 
-int check_shape_compatibility(Tensor *a, Tensor *b) 
-{
-    if (a->ndim != b->ndim) 
-    {
-        return 0;
-    }
-    for (int i = 0; i < a->ndim; i++) 
-    {
-        if (a->shape[i] != b->shape[i]) 
-        {
-            return 0;
-        }
-    }
-    return 1;
-}
-
 Tensor* tensor_add(Tensor *a, Tensor *b) 
 {
     if (!check_shape_compatibility(a, b)) 
@@ -639,6 +623,161 @@ Tensor* tensor_argmin(Tensor *tensor, int axis)
             result->data[result_index] = old_index / tensor->stride[axis] % tensor->shape[axis];
         }
     }
+
+    return result;
+}
+
+Tensor* tensor_sum(Tensor *tensor, int axis) 
+{
+    int new_ndim = tensor->ndim - 1;
+    int *new_shape = (int*)malloc(new_ndim * sizeof(int));
+
+    for (int i = 0, j = 0; i < tensor->ndim; i++) 
+    {
+        if (i != axis) 
+        {
+            new_shape[j++] = tensor->shape[i];
+        }
+    }
+
+    Tensor *result = (Tensor*)malloc(sizeof(Tensor));
+    result->ndim = new_ndim;
+    result->shape = new_shape;
+    result->stride = (int*)malloc(new_ndim * sizeof(int));
+    result->size = 1;
+    for (int i = 0; i < new_ndim; i++) 
+    {
+        result->size *= result->shape[i];
+    }
+    result->data = (float*)malloc(result->size * sizeof(float));
+    result->grad = (float*)calloc(result->size, sizeof(float));
+
+    result->stride[new_ndim - 1] = 1;
+    for (int i = new_ndim - 2; i >= 0; i--) 
+    {
+        result->stride[i] = result->stride[i + 1] * result->shape[i + 1];
+    }
+
+    // Initialize the result tensor data with zeros
+    memset(result->data, 0, result->size * sizeof(float));
+
+    // Perform the sum operation
+    for (int i = 0; i < tensor->size; i++) 
+    {
+        int result_index = 0;
+        int old_index = i;
+
+        // Compute the index for the result tensor excluding the axis dimension
+        for (int d = tensor->ndim - 1, k = new_ndim - 1; d >= 0; d--) 
+        {
+            if (d == axis) 
+            {
+                continue;
+            }
+            int coord = (old_index / tensor->stride[d]) % tensor->shape[d];
+            result_index += coord * result->stride[k--];
+        }
+
+        result->data[result_index] += tensor->data[i];
+    }
+
+    result->backward = &tensor_sum_backward;
+    result->grad_a = tensor;
+
+    return result;
+}
+
+Tensor* tensor_mean(Tensor *tensor, int axis) 
+{
+    Tensor *sum_result = tensor_sum(tensor, axis);
+    
+    int divisor = tensor->shape[axis];
+    for (int i = 0; i < sum_result->size; i++) 
+    {
+        sum_result->data[i] /= divisor;
+    }
+
+    sum_result->backward = &tensor_mean_backward;
+    sum_result->grad_a = tensor;
+
+    return sum_result;
+}
+
+Tensor* tensor_cat(Tensor *a, Tensor *b, int axis) 
+{
+    // Check if the tensors can be concatenated along the given axis
+    for (int i = 0; i < a->ndim; i++) 
+    {
+        if (i != axis && a->shape[i] != b->shape[i]) 
+        {
+            fprintf(stderr, "Error: Tensors cannot be concatenated along axis due to shape mismatch.\n");
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    // Calculate the shape of the result tensor
+    int *new_shape = (int *)malloc(a->ndim * sizeof(int));
+    for (int i = 0; i < a->ndim; i++) 
+    {
+        new_shape[i] = (i == axis) ? (a->shape[i] + b->shape[i]) : a->shape[i];
+    }
+
+    Tensor *result = (Tensor *)malloc(sizeof(Tensor));
+    result->ndim = a->ndim;
+    result->shape = new_shape;
+    result->stride = (int *)malloc(result->ndim * sizeof(int));
+
+    result->size = 1;
+    for (int i = 0; i < result->ndim; i++) 
+    {
+        result->size *= result->shape[i];
+    }
+    result->data = (float *)malloc(result->size * sizeof(float));
+    result->grad = (float *)calloc(result->size, sizeof(float));
+
+    result->stride[result->ndim - 1] = 1;
+    for (int i = result->ndim - 2; i >= 0; i--) 
+    {
+        result->stride[i] = result->stride[i + 1] * result->shape[i + 1];
+    }
+
+    // Copy data from the first tensor to the result tensor
+    for (int i = 0; i < a->size; i++) 
+    {
+        int result_index = 0;
+        int old_index = i;
+
+        for (int d = result->ndim - 1, k = result->ndim - 1; d >= 0; d--) 
+        {
+            int coord = (old_index / a->stride[d]) % a->shape[d];
+            result_index += coord * result->stride[k--];
+        }
+
+        result->data[result_index] = a->data[i];
+    }
+
+    // Copy data from the second tensor to the result tensor
+    for (int i = 0; i < b->size; i++) 
+    {
+        int result_index = 0;
+        int old_index = i;
+
+        for (int d = result->ndim - 1, k = result->ndim - 1; d >= 0; d--) 
+        {
+            int coord = (old_index / b->stride[d]) % b->shape[d];
+            if (d == axis) 
+            {
+                coord += a->shape[axis];
+            }
+            result_index += coord * result->stride[k--];
+        }
+
+        result->data[result_index] = b->data[i];
+    }
+
+    result->backward = &tensor_cat_backward;
+    result->grad_a = a;
+    result->grad_b = b;
 
     return result;
 }

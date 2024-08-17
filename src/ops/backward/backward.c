@@ -368,3 +368,147 @@ void tensor_min_backward(Tensor *self, float *grad)
         tensor->backward(tensor, tensor->grad);
     }
 }
+
+void tensor_sum_backward(Tensor *self, float *grad) 
+{
+    Tensor *tensor = self->grad_a;
+
+    for (int i = 0; i < tensor->size; i++) 
+    {
+        int result_index = 0;
+        int old_index = i;
+
+        // Calculate the axis dynamically
+        int axis = -1;
+        for (int d = tensor->ndim - 1, k = self->ndim - 1; d >= 0; d--) 
+        {
+            if (k < 0 || tensor->stride[d] != self->stride[k]) 
+            {
+                axis = d;
+                break;
+            }
+            k--;
+        }
+
+        // Compute the index for the result tensor excluding the axis dimension
+        for (int d = tensor->ndim - 1, k = self->ndim - 1; d >= 0; d--) 
+        {
+            if (d == axis) 
+            {
+                continue;
+            }
+            int coord = (old_index / tensor->stride[d]) % tensor->shape[d];
+            result_index += coord * self->stride[k--];
+        }
+
+        tensor->grad[i] += grad[result_index];
+    }
+
+    if (tensor->backward) 
+    {
+        tensor->backward(tensor, tensor->grad);
+    }
+}
+
+void tensor_mean_backward(Tensor *self, float *grad) 
+{
+    Tensor *tensor = self->grad_a;
+
+    int axis = -1;
+    for (int d = tensor->ndim - 1, k = self->ndim - 1; d >= 0; d--) 
+    {
+        if (k < 0 || tensor->stride[d] != self->stride[k]) 
+        {
+            axis = d;
+            break;
+        }
+        k--;
+    }
+
+    // Calculate the divisor
+    int divisor = tensor->shape[axis];
+
+    for (int i = 0; i < tensor->size; i++) 
+    {
+        int result_index = 0;
+        int old_index = i;
+
+        // Compute the index for the result tensor excluding the axis dimension
+        for (int d = tensor->ndim - 1, k = self->ndim - 1; d >= 0; d--) 
+        {
+            if (d == axis) 
+            {
+                continue;
+            }
+            int coord = (old_index / tensor->stride[d]) % tensor->shape[d];
+            result_index += coord * self->stride[k--];
+        }
+
+        tensor->grad[i] += grad[result_index] / divisor;
+    }
+
+    if (tensor->backward) 
+    {
+        tensor->backward(tensor, tensor->grad);
+    }
+}
+
+void tensor_cat_backward(Tensor *self, float *grad) 
+{
+    Tensor *a = self->grad_a;
+    Tensor *b = self->grad_b;
+
+    // Infer the axis by comparing the shapes of a, b, and the concatenated tensor
+    int axis = -1;
+    for (int i = 0; i < a->ndim; i++) 
+    {
+        if (a->shape[i] != b->shape[i]) 
+        {
+            axis = i;
+            break;
+        }
+    }
+
+    // Distribute the gradient to the first tensor
+    for (int i = 0; i < a->size; i++) 
+    {
+        int result_index = 0;
+        int old_index = i;
+
+        for (int d = a->ndim - 1, k = self->ndim - 1; d >= 0; d--) 
+        {
+            int coord = (old_index / a->stride[d]) % a->shape[d];
+            result_index += coord * self->stride[k--];
+        }
+
+        a->grad[i] += grad[result_index];
+    }
+
+    // Distribute the gradient to the second tensor
+    for (int i = 0; i < b->size; i++) 
+    {
+        int result_index = 0;
+        int old_index = i;
+
+        for (int d = b->ndim - 1, k = self->ndim - 1; d >= 0; d--) 
+        {
+            int coord = (old_index / b->stride[d]) % b->shape[d];
+            if (d == axis) 
+            {
+                coord += a->shape[axis];
+            }
+            result_index += coord * self->stride[k--];
+        }
+
+        b->grad[i] += grad[result_index];
+    }
+
+    if (a->backward) 
+    {
+        a->backward(a, a->grad);
+    }
+    if (b->backward) 
+    {
+        b->backward(b, b->grad);
+    }
+}

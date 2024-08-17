@@ -100,3 +100,19 @@ void print_tensor_grad(Tensor *tensor)
     printf("\n");
     free(indices);
 }
+
+int check_shape_compatibility(Tensor *a, Tensor *b) 
+{
+    if (a->ndim != b->ndim) 
+    {
+        return 0;
+    }
+    for (int i = 0; i < a->ndim; i++) 
+    {
+        if (a->shape[i] != b->shape[i]) 
+        {
+            return 0;
+        }
+    }
+    return 1;
+}

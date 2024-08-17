@@ -43,6 +43,9 @@ void tensor_ops()
     Tensor *min_result = tensor_min(a, 2);
     Tensor *argmax_result = tensor_argmax(a, 2);
     Tensor *argmin_result = tensor_argmin(a, 2);
+    Tensor *sum_result = tensor_sum(a, 2);
+    Tensor *mean_result = tensor_mean(a, 2);
+    Tensor *cat_result = tensor_cat(a, b, 3);
 
     // Initialize gradients for backward pass
     for (int i = 0; i < a->size; i++) 
@@ -78,6 +81,21 @@ void tensor_ops()
         min_result->grad[i] = 1.0;
     }
 
+    for (int i = 0; i < sum_result->size; i++) 
+    {
+        sum_result->grad[i] = 1.0;
+    }
+
+    for (int i = 0; i < mean_result->size; i++) 
+    {
+        mean_result->grad[i] = 1.0;
+    }
+
+    for (int i = 0; i < cat_result->size; i++) 
+    {
+        cat_result->grad[i] = 1.0;
+    }
+
     // Perform backward passes
     neg->backward(neg, neg->grad);
     abs->backward(abs, abs->grad);
@@ -94,6 +112,9 @@ void tensor_ops()
     transposed->backward(transposed, transposed->grad);
     max_result->backward(max_result, max_result->grad);
     min_result->backward(min_result, min_result->grad);
+    sum_result->backward(sum_result, sum_result->grad);
+    mean_result->backward(mean_result, mean_result->grad);
+    cat_result->backward(cat_result, cat_result->grad);
 
     // Print all the results
     print_tensor(a, "a");
@@ -113,6 +134,9 @@ void tensor_ops()
     print_tensor(min_result, "min");
     print_tensor(argmax_result, "argmax");
     print_tensor(argmin_result, "argmin");
+    print_tensor(sum_result, "sum");
+    print_tensor(mean_result, "mean");
+    print_tensor(cat_result, "cat_result");
 
     // Free all tensors
     tensor_free(a);
@@ -132,6 +156,9 @@ void tensor_ops()
     tensor_free(min_result);
     tensor_free(argmax_result);
     tensor_free(argmin_result);
+    tensor_free(sum_result);
+    tensor_free(mean_result);
+    tensor_free(cat_result);
 }
 
 void tensor_matmul_op() 

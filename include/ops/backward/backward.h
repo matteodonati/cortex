@@ -17,5 +17,8 @@ void tensor_reshape_backward(Tensor *self, float *grad);
 void tensor_transpose_backward(Tensor *self, float *grad);
 void tensor_max_backward(Tensor *self, float *grad);
 void tensor_min_backward(Tensor *self, float *grad);
+void tensor_sum_backward(Tensor *self, float *grad);
+void tensor_mean_backward(Tensor *self, float *grad);
+void tensor_cat_backward(Tensor *self, float *grad);
 
 #endif
