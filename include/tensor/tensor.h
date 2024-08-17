@@ -14,13 +14,12 @@ typedef struct Tensor {
     struct Tensor *grad_b;
 } Tensor;
 
-
 Tensor* tensor_from_array(float *array, int *shape, int ndim);
 Tensor* tensor_rand(int *shape, int ndim);
 Tensor* tensor_zeros(int *shape, int ndim);
 Tensor* tensor_ones(int *shape, int ndim);
 Tensor* tensor_full(int *shape, int ndim, float value);
-Tensor* allocate_tensor_with_same_shape(Tensor *a);
+Tensor* tensor_like(Tensor *a);
 void tensor_free(Tensor *tensor);
 
 #endif

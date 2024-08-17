@@ -165,7 +165,7 @@ Tensor* tensor_full(int *shape, int ndim, float value)
     return tensor;
 }
 
-Tensor* allocate_tensor_with_same_shape(Tensor *a) 
+Tensor* tensor_like(Tensor *a) 
 {
     Tensor *result = (Tensor*)malloc(sizeof(Tensor));
     result->data = (float*)malloc(a->size * sizeof(float));

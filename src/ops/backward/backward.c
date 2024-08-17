@@ -2,8 +2,6 @@
 #include <stdlib.h>
 #include "ops/backward/backward.h"
 
-#include <stdio.h>
-
 void tensor_negate_backward(Tensor *self, float *grad) 
 {
     Tensor *tensor = self->grad_a;
@@ -160,6 +158,22 @@ void tensor_div_backward(Tensor *self, float *grad)
     if (b->backward) 
     {
         b->backward(b, b->grad);
+    }
+}
+
+void tensor_scalar_mul_backward(Tensor *self, float *grad) 
+{
+    Tensor *tensor = self->grad_a;
+
+    for (int i = 0; i < tensor->size; i++) 
+    {
+        float scalar = self->data[i] / tensor->data[i];
+        tensor->grad[i] += grad[i] * scalar;
+    }
+
+    if (tensor->backward) 
+    {
+        tensor->backward(tensor, tensor->grad);
     }
 }
 

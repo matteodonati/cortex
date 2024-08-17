@@ -2,12 +2,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "tensor/utils/utils.h"
 #include "ops/forward/forward.h"
 #include "ops/backward/backward.h"
 
 Tensor* tensor_negate(Tensor *tensor) 
 {
-    Tensor *result = allocate_tensor_with_same_shape(tensor);
+    Tensor *result = tensor_like(tensor);
 
     for (int i = 0; i < tensor->size; i++) 
     {
@@ -22,7 +23,7 @@ Tensor* tensor_negate(Tensor *tensor)
 
 Tensor* tensor_abs(Tensor *tensor) 
 {
-    Tensor *result = allocate_tensor_with_same_shape(tensor);
+    Tensor *result = tensor_like(tensor);
 
     for (int i = 0; i < tensor->size; i++) 
     {
@@ -37,7 +38,7 @@ Tensor* tensor_abs(Tensor *tensor)
 
 Tensor* tensor_sqrt(Tensor *tensor) 
 {
-    Tensor *result = allocate_tensor_with_same_shape(tensor);
+    Tensor *result = tensor_like(tensor);
 
     for (int i = 0; i < tensor->size; i++) 
     {
@@ -52,7 +53,7 @@ Tensor* tensor_sqrt(Tensor *tensor)
 
 Tensor* tensor_exp(Tensor *tensor) 
 {
-    Tensor *result = allocate_tensor_with_same_shape(tensor);
+    Tensor *result = tensor_like(tensor);
 
     for (int i = 0; i < tensor->size; i++) 
     {
@@ -67,7 +68,7 @@ Tensor* tensor_exp(Tensor *tensor)
 
 Tensor* tensor_log(Tensor *tensor)
 {
-    Tensor *result = allocate_tensor_with_same_shape(tensor);
+    Tensor *result = tensor_like(tensor);
 
     for (int i = 0; i < tensor->size; i++)
     {
@@ -88,7 +89,7 @@ Tensor* tensor_add(Tensor *a, Tensor *b)
         exit(EXIT_FAILURE);
     }
 
-    Tensor *result = allocate_tensor_with_same_shape(a);
+    Tensor *result = tensor_like(a);
 
     if (a == b) 
     {
@@ -120,7 +121,7 @@ Tensor* tensor_sub(Tensor *a, Tensor *b)
         exit(EXIT_FAILURE);
     }
 
-    Tensor *result = allocate_tensor_with_same_shape(a);
+    Tensor *result = tensor_like(a);
 
     if (a == b) 
     {
@@ -152,7 +153,7 @@ Tensor* tensor_mul(Tensor *a, Tensor *b)
         exit(EXIT_FAILURE);
     }
 
-    Tensor *result = allocate_tensor_with_same_shape(a);
+    Tensor *result = tensor_like(a);
 
     if (a == b) 
     {
@@ -184,7 +185,7 @@ Tensor* tensor_div(Tensor *a, Tensor *b)
         exit(EXIT_FAILURE);
     }
 
-    Tensor *result = allocate_tensor_with_same_shape(a);
+    Tensor *result = tensor_like(a);
 
     if (a == b) 
     {
@@ -207,6 +208,22 @@ Tensor* tensor_div(Tensor *a, Tensor *b)
 
     return result;
 }
+
+Tensor* tensor_scalar_mul(Tensor *tensor, float scalar) 
+{
+    Tensor *result = tensor_like(tensor);
+
+    for (int i = 0; i < tensor->size; i++) 
+    {
+        result->data[i] = tensor->data[i] * scalar;
+    }
+
+    result->backward = &tensor_scalar_mul_backward;
+    result->grad_a = tensor;
+
+    return result;
+}
+
 
 Tensor* tensor_matmul(Tensor *a, Tensor *b) 
 {

@@ -2,7 +2,6 @@
 #define OPS_FORWARD_H
 
 #include "tensor/tensor.h"
-#include "tensor/utils/utils.h"
 
 Tensor* tensor_negate(Tensor *tensor);
 Tensor* tensor_abs(Tensor *tensor);
@@ -13,6 +12,7 @@ Tensor* tensor_add(Tensor *a, Tensor *b);
 Tensor* tensor_sub(Tensor *a, Tensor *b);
 Tensor* tensor_mul(Tensor *a, Tensor *b);
 Tensor* tensor_div(Tensor *a, Tensor *b);
+Tensor* tensor_scalar_mul(Tensor *tensor, float scalar);
 Tensor* tensor_matmul(Tensor *a, Tensor *b);
 Tensor* tensor_reshape(Tensor *tensor, int *new_shape, int new_ndim);
 Tensor* tensor_transpose(Tensor *tensor, int *axes);
