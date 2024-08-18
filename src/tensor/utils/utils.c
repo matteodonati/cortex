@@ -103,16 +103,43 @@ void print_tensor_grad(Tensor *tensor)
 
 int check_shape_compatibility(Tensor *a, Tensor *b) 
 {
-    if (a->ndim != b->ndim) 
+    int ndim_a = a->ndim;
+    int ndim_b = b->ndim;
+    int min_ndim = ndim_a < ndim_b ? ndim_a : ndim_b;
+
+    for (int i = 0; i < min_ndim; i++) 
     {
-        return 0;
-    }
-    for (int i = 0; i < a->ndim; i++) 
-    {
-        if (a->shape[i] != b->shape[i]) 
+        int dim_a = a->shape[ndim_a - 1 - i];
+        int dim_b = b->shape[ndim_b - 1 - i];
+        if (dim_a != dim_b && dim_a != 1 && dim_b != 1) 
         {
             return 0;
         }
     }
     return 1;
+}
+
+void adjust_indices_for_broadcasting(Tensor *a, Tensor *b, int *a_index, int *b_index, int i) 
+{
+    *a_index = 0;
+    *b_index = 0;
+
+    int index = i;
+    for (int dim = 0; dim < a->ndim; dim++) 
+    {
+        int a_dim = a->ndim - 1 - dim;
+        int b_dim = b->ndim - 1 - dim;
+        int stride = index % (a->shape[a_dim] > b->shape[b_dim] ? a->shape[a_dim] : b->shape[b_dim]);
+        index /= (a->shape[a_dim] > b->shape[b_dim] ? a->shape[a_dim] : b->shape[b_dim]);
+
+        if (a->shape[a_dim] > 1) 
+        {
+            *a_index += stride * a->stride[a_dim];
+        }
+
+        if (b->shape[b_dim] > 1) 
+        {
+            *b_index += stride * b->stride[b_dim];
+        }
+    }
 }

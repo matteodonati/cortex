@@ -108,27 +108,18 @@ Tensor* tensor_add(Tensor *a, Tensor *b)
         fprintf(stderr, "Error: One of the input tensors is NULL in tensor_add.\n");
         exit(EXIT_FAILURE);
     }
-
     if (!check_shape_compatibility(a, b)) 
     {
-        fprintf(stderr, "Error: Shape mismatch in tensor_add.\n");
+        fprintf(stderr, "Error: Tensors are not broadcast-compatible in tensor_add.\n");
         exit(EXIT_FAILURE);
     }
 
-    Tensor *result = tensor_like(a);
-    if (a == b) 
+    Tensor *result = tensor_like(a->size >= b->size ? a : b);
+    for (int i = 0; i < result->size; i++) 
     {
-        for (int i = 0; i < a->size; i++) 
-        {
-            result->data[i] = 2 * a->data[i];
-        }
-    } 
-    else 
-    {
-        for (int i = 0; i < a->size; i++) 
-        {
-            result->data[i] = a->data[i] + b->data[i];
-        }
+        int a_index, b_index;
+        adjust_indices_for_broadcasting(a, b, &a_index, &b_index, i);
+        result->data[i] = a->data[a_index] + b->data[b_index];
     }
     result->backward = &tensor_add_backward;
     result->grad_a = a;
@@ -144,27 +135,18 @@ Tensor* tensor_sub(Tensor *a, Tensor *b)
         fprintf(stderr, "Error: One of the input tensors is NULL in tensor_sub.\n");
         exit(EXIT_FAILURE);
     }
-
     if (!check_shape_compatibility(a, b)) 
     {
-        fprintf(stderr, "Error: Shape mismatch in tensor_sub.\n");
+        fprintf(stderr, "Error: Tensors are not broadcast-compatible in tensor_sub.\n");
         exit(EXIT_FAILURE);
     }
 
-    Tensor *result = tensor_like(a);
-    if (a == b) 
+    Tensor *result = tensor_like(a->size >= b->size ? a : b);
+    for (int i = 0; i < result->size; i++) 
     {
-        for (int i = 0; i < a->size; i++) 
-        {
-            result->data[i] = 0;
-        }
-    } 
-    else 
-    {
-        for (int i = 0; i < a->size; i++) 
-        {
-            result->data[i] = a->data[i] - b->data[i];
-        }
+        int a_index, b_index;
+        adjust_indices_for_broadcasting(a, b, &a_index, &b_index, i);
+        result->data[i] = a->data[a_index] - b->data[b_index];
     }
     result->backward = &tensor_sub_backward;
     result->grad_a = a;
@@ -180,27 +162,18 @@ Tensor* tensor_mul(Tensor *a, Tensor *b)
         fprintf(stderr, "Error: One of the input tensors is NULL in tensor_mul.\n");
         exit(EXIT_FAILURE);
     }
-
     if (!check_shape_compatibility(a, b)) 
     {
-        fprintf(stderr, "Error: Shape mismatch in tensor_mul.\n");
+        fprintf(stderr, "Error: Tensors are not broadcast-compatible in tensor_mul.\n");
         exit(EXIT_FAILURE);
     }
 
-    Tensor *result = tensor_like(a);
-    if (a == b) 
+    Tensor *result = tensor_like(a->size >= b->size ? a : b);
+    for (int i = 0; i < result->size; i++) 
     {
-        for (int i = 0; i < a->size; i++) 
-        {
-            result->data[i] = a->data[i] * a->data[i];
-        }
-    } 
-    else 
-    {
-        for (int i = 0; i < a->size; i++) 
-        {
-            result->data[i] = a->data[i] * b->data[i];
-        }
+        int a_index, b_index;
+        adjust_indices_for_broadcasting(a, b, &a_index, &b_index, i);
+        result->data[i] = a->data[a_index] * b->data[b_index];
     }
     result->backward = &tensor_mul_backward;
     result->grad_a = a;
@@ -216,27 +189,18 @@ Tensor* tensor_div(Tensor *a, Tensor *b)
         fprintf(stderr, "Error: One of the input tensors is NULL in tensor_div.\n");
         exit(EXIT_FAILURE);
     }
-
     if (!check_shape_compatibility(a, b)) 
     {
-        fprintf(stderr, "Error: Shape mismatch in tensor_div.\n");
+        fprintf(stderr, "Error: Tensors are not broadcast-compatible in tensor_div.\n");
         exit(EXIT_FAILURE);
     }
 
-    Tensor *result = tensor_like(a);
-    if (a == b) 
+    Tensor *result = tensor_like(a->size >= b->size ? a : b);
+    for (int i = 0; i < result->size; i++) 
     {
-        for (int i = 0; i < a->size; i++) 
-        {
-            result->data[i] = 1.0;
-        }
-    } 
-    else 
-    {
-        for (int i = 0; i < a->size; i++) 
-        {
-            result->data[i] = a->data[i] / b->data[i];
-        }
+        int a_index, b_index;
+        adjust_indices_for_broadcasting(a, b, &a_index, &b_index, i);
+        result->data[i] = a->data[a_index] / b->data[b_index];
     }
     result->backward = &tensor_div_backward;
     result->grad_a = a;

@@ -1,5 +1,6 @@
 #include <math.h>
 #include <stdlib.h>
+#include "tensor/utils/utils.h"
 #include "ops/backward/backward.h"
 
 void tensor_negate_backward(Tensor *self, float *grad) 
@@ -84,8 +85,10 @@ void tensor_add_backward(Tensor *self, float *grad)
 
     for (int i = 0; i < self->size; i++) 
     {
-        a->grad[i] += grad[i];
-        b->grad[i] += grad[i];
+        int a_index, b_index;
+        adjust_indices_for_broadcasting(a, b, &a_index, &b_index, i);
+        a->grad[a_index] += grad[i];
+        b->grad[b_index] += grad[i];
     }
 
     if (a->backward) 
@@ -105,8 +108,10 @@ void tensor_sub_backward(Tensor *self, float *grad)
 
     for (int i = 0; i < self->size; i++) 
     {
-        a->grad[i] += grad[i];
-        b->grad[i] -= grad[i];
+        int a_index, b_index;
+        adjust_indices_for_broadcasting(a, b, &a_index, &b_index, i);
+        a->grad[a_index] += grad[i];
+        b->grad[b_index] -= grad[i];
     }
 
     if (a->backward) 
@@ -126,8 +131,10 @@ void tensor_mul_backward(Tensor *self, float *grad)
 
     for (int i = 0; i < self->size; i++) 
     {
-        a->grad[i] += grad[i] * b->data[i];
-        b->grad[i] += grad[i] * a->data[i];
+        int a_index, b_index;
+        adjust_indices_for_broadcasting(a, b, &a_index, &b_index, i);
+        a->grad[a_index] += grad[i] * b->data[b_index];
+        b->grad[b_index] += grad[i] * a->data[a_index];
     }
 
     if (a->backward) 
@@ -147,8 +154,10 @@ void tensor_div_backward(Tensor *self, float *grad)
 
     for (int i = 0; i < self->size; i++) 
     {
-        a->grad[i] += grad[i] / b->data[i];
-        b->grad[i] -= grad[i] * a->data[i] / (b->data[i] * b->data[i]);
+        int a_index, b_index;
+        adjust_indices_for_broadcasting(a, b, &a_index, &b_index, i);
+        a->grad[a_index] += grad[i] / b->data[b_index];
+        b->grad[b_index] -= grad[i] * a->data[a_index] / (b->data[b_index] * b->data[b_index]);
     }
 
     if (a->backward) 

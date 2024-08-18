@@ -5,5 +5,8 @@
 #include "tensor/utils/utils.h"
 #include "ops/forward/forward.h"
 #include "ops/backward/backward.h"
+#include "nn/layer.h"
+#include "nn/dense.h"
+#include "optim/optim.h"
 
 #endif

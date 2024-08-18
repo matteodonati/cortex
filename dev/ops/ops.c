@@ -21,7 +21,7 @@ void tensor_ops()
     int shape_a[] = {2, 3, 4, 6};
 
     Tensor *a = tensor_full(shape_a, ndim_a, 3.0);
-    Tensor *b = tensor_full(shape_a, ndim_a, 4.0);  // Shape matches a
+    Tensor *b = tensor_full(shape_a, ndim_a, 4.0);
 
     // Unary operations
     Tensor *neg = tensor_negate(a);
@@ -36,7 +36,7 @@ void tensor_ops()
     Tensor *mul = tensor_mul(a, b);
     Tensor *div = tensor_div(a, b);
 
-    // Additional operations (reshape, transpose, max, min, argmax, argmin)
+    // Additional operations
     Tensor *reshaped = tensor_reshape(a, (int []){2, 3, 6, 4}, 4);
     Tensor *transposed = tensor_transpose(a, (int []){0, 2, 1, 3});
     Tensor *max_result = tensor_max(a, 2);

@@ -57,3 +57,4 @@ bin/
 
 # Others
 *.json
+.vscode/
