@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 #include "nn/dense.h"
 #include "tensor/tensor.h"
 #include "ops/forward/forward.h"
@@ -14,7 +15,7 @@ Layer* dense_create(int input_dim, int output_dim)
     dense->input_dim = input_dim;
     dense->output_dim = output_dim;
     dense->base.layer_type = LAYER_TYPE_DENSE;
-    dense->base.weights = tensor_rand((int[]){input_dim, output_dim}, 2);
+    dense->base.weights = tensor_rand((int[]){output_dim, input_dim}, 2);
     dense->base.bias = tensor_zeros((int[]){output_dim}, 1);
     dense->base.forward = &dense_forward;
     dense->base.backward = &dense_backward;
@@ -26,58 +27,37 @@ Layer* dense_create(int input_dim, int output_dim)
 Tensor* dense_forward(Layer *self, Tensor *input)
 {
     self->input = input;
-    
-    Tensor *z = tensor_matmul(input, self->weights);
+    Tensor *z = tensor_matmul(input, tensor_transpose(self->weights, (int[]){1, 0}));
     Tensor *output = tensor_add(z, self->bias);
-
-    printf("input: ");
-    print_tensor_shape(input);
-    print_tensor_data(input);
-    printf("weights: ");
-    print_tensor_shape(self->weights);
-    print_tensor_data(self->weights);
-    printf("z: ");
-    print_tensor_shape(z);
-    print_tensor_data(z);
-    printf("bias: ");
-    print_tensor_shape(self->bias);
-    print_tensor_data(self->bias);
-    printf("output: ");
-    print_tensor_shape(output);
-    print_tensor_data(output);
-    printf("\n");
-
     tensor_free(z);
-    
     self->output = output;
     return output;
 }
 
-void dense_backward(Layer *self, Tensor *grad_output)
+void dense_backward(Layer *self, float *grad)
 {
-    // Calculate grad_weights using tensor_matmul and then call its backward pass
-    Tensor *transposed_input = tensor_transpose(self->input, (int[]){1, 0});
-    self->grad_weights = tensor_matmul(transposed_input, grad_output);
-    tensor_matmul_backward(self->grad_weights, grad_output->grad);  // This propagates the gradient to the input and weights
-    tensor_free(transposed_input);
+    Tensor *grad_output = tensor_from_array(grad, self->output->shape, self->output->ndim);
 
-    // Calculate grad_bias using tensor_sum and then call its backward pass
-    self->grad_bias = tensor_sum(grad_output, 0);
-    tensor_sum_backward(self->grad_bias, grad_output->grad);  // This propagates the gradient to the input
+    // Calculate gradients
+    Tensor *grad_weights = tensor_matmul(tensor_transpose(grad_output, (int[]){1, 0}), self->input);
+    Tensor *grad_bias = tensor_sum(grad_output, 0);
+    Tensor *grad_input = tensor_matmul(grad_output, self->weights);
 
-    // Calculate grad_input using tensor_matmul and then call its backward pass
-    Tensor *transposed_weights = tensor_transpose(self->weights, (int[]){1, 0});
-    self->grad_input = tensor_matmul(grad_output, transposed_weights);
-    tensor_matmul_backward(self->grad_input, grad_output->grad);  // This propagates the gradient to the input and weights
-    tensor_free(transposed_weights);
+    // Store gradients in the grad field of the respective Tensors
+    memcpy(self->weights->grad, grad_weights->data, grad_weights->size * sizeof(float));
+    memcpy(self->bias->grad, grad_bias->data, grad_bias->size * sizeof(float));
+    memcpy(self->input->grad, grad_input->data, grad_input->size * sizeof(float));
 
-    // Optionally, free the gradients of grad_output if they're no longer needed
+    // Free the temporary gradient tensors
+    tensor_free(grad_weights);
+    tensor_free(grad_bias);
+    tensor_free(grad_input);
     tensor_free(grad_output);
 }
 
 void dense_update_params(Layer *self, Optimizer *optimizer)
 {
-    optimizer->update(optimizer, self->weights, self->grad_weights, self->bias, self->grad_bias);
+    optimizer->update(optimizer, self->weights, self->bias);
 }
 
 void dense_free(Layer *self)

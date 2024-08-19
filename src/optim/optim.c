@@ -11,21 +11,16 @@ Optimizer* create_sgd_optimizer(float learning_rate)
     return optimizer;
 }
 
-void sgd_update(Optimizer *self, Tensor *weights, Tensor *grad_weights, Tensor *bias, Tensor *grad_bias) 
+void sgd_update(Optimizer *self, Tensor *weights, Tensor *bias) 
 {
-    Tensor *delta_weights = tensor_scalar_mul(grad_weights, -self->learning_rate);
-    Tensor *delta_bias = tensor_scalar_mul(grad_bias, -self->learning_rate);
-
-    Tensor *new_weights = tensor_add(weights, delta_weights);
-    Tensor *new_bias = tensor_add(bias, delta_bias);
-
-    tensor_free(weights);
-    tensor_free(bias);
-    tensor_free(delta_weights);
-    tensor_free(delta_bias);
-
-    weights = new_weights;
-    bias = new_bias;
+    for (int i = 0; i < weights->size; i++) 
+    {
+        weights->data[i] -= self->learning_rate * weights->grad[i];
+    }
+    for (int i = 0; i < bias->size; i++) 
+    {
+        bias->data[i] -= self->learning_rate * bias->grad[i];
+    }
 }
 
 void optimizer_free(Optimizer *optimizer) 

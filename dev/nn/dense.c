@@ -30,11 +30,28 @@ int main()
 
     // Forward pass
     Tensor *output = dense_layer->forward(dense_layer, input);
+
+    // Define a dummy gradient for the backward pass
+    for (int i = 0; i < output->size; i++)
+    {
+        output->grad[i] = 1.0;
+    }
+
     print_tensor(output, "Output");
+    print_tensor(dense_layer->weights, "Weights (before update)");
+    print_tensor(dense_layer->bias, "Bias (before update)");
+
+    // Backward pass
+    dense_layer->backward(dense_layer, output->grad);
+    Optimizer *sgd = create_sgd_optimizer(0.01);
+    sgd->update(sgd, dense_layer->weights, dense_layer->bias);
+    print_tensor(dense_layer->weights, "Weights (after update)");
+    print_tensor(dense_layer->bias, "Bias (after update)");
 
     // Free memory
     tensor_free(input);
     tensor_free(output);
+    optimizer_free(sgd);
     layer_free(dense_layer);
 
     return 0;

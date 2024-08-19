@@ -12,14 +12,6 @@ void layer_free(Layer *layer)
     {
         tensor_free(layer->bias);
     }
-    if (layer->grad_weights)
-    {
-        tensor_free(layer->grad_weights);
-    }
-    if (layer->grad_bias)
-    {
-        tensor_free(layer->grad_bias);
-    }
     /*
     if (layer->output)
     {
