@@ -13,6 +13,8 @@ typedef struct Layer
     Tensor *input;
     Tensor *output;
     int layer_type;
+    Tensor **tensors;
+    int tensor_count;
     Tensor *(*forward)(struct Layer *self, Tensor *input);
     void (*update_params)(struct Layer *self, Optimizer *optimizer);
     void (*free)(struct Layer *self);

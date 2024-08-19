@@ -267,7 +267,7 @@ Tensor* tensor_matmul(Tensor *a, Tensor *b)
     out_shape[out_ndim - 1] = n;
 
     // Create the result Tensor
-    Tensor *result = (Tensor*)malloc(sizeof(Tensor));
+    Tensor *result = (Tensor *)malloc(sizeof(Tensor));
     result->shape = out_shape;
     result->stride = out_stride;
     result->ndim = out_ndim;
@@ -645,18 +645,18 @@ Tensor* tensor_mean(Tensor *tensor, int axis)
         exit(EXIT_FAILURE);
     }
 
-    Tensor *sum_result = tensor_sum(tensor, axis);
+    Tensor *result = tensor_sum(tensor, axis);
     
     int divisor = tensor->shape[axis];
-    for (int i = 0; i < sum_result->size; i++) 
+    for (int i = 0; i < result->size; i++) 
     {
-        sum_result->data[i] /= divisor;
+        result->data[i] /= divisor;
     }
 
-    sum_result->backward = &tensor_mean_backward;
-    sum_result->grad_a = tensor;
+    result->backward = &tensor_mean_backward;
+    result->grad_a = tensor;
 
-    return sum_result;
+    return result;
 }
 
 Tensor* tensor_cat(Tensor *a, Tensor *b, int axis) 

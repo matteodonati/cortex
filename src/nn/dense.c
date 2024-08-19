@@ -6,9 +6,6 @@
 #include "ops/backward/backward.h"
 #include "optim/optim.h"
 
-#include <stdio.h>
-#include "tensor/utils/utils.h"
-
 Layer* dense_create(int input_dim, int output_dim)
 {
     Dense *dense = (Dense *)malloc(sizeof(Dense));
@@ -32,6 +29,15 @@ Tensor* dense_forward(Layer *self, Tensor *input)
     Tensor *transposed_weights = tensor_transpose(self->weights, (int[]){1, 0});
     Tensor *z = tensor_matmul(input, transposed_weights);
     Tensor *output = tensor_add(z, self->bias);
+
+    // Allocate memory for storing Tensor pointers
+    self->tensors = malloc(3 * sizeof(Tensor*));
+    self->tensor_count = 0;
+
+    // Store the created tensors in the list
+    self->tensors[self->tensor_count++] = transposed_weights;
+    self->tensors[self->tensor_count++] = z;
+    self->tensors[self->tensor_count++] = output;
 
     // Set up backward functions and references
     output->grad_a = z;

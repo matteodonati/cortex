@@ -69,8 +69,6 @@ int main()
 
     // Free memory
     tensor_free(input);
-    tensor_free(hidden_output);
-    tensor_free(output);
     optimizer_free(sgd);
     layer_free(dense_layer1);
     layer_free(dense_layer2);

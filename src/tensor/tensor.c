@@ -83,12 +83,24 @@ Tensor* tensor_like(Tensor *a)
 
 void tensor_free(Tensor *tensor) 
 {
-    if(tensor) 
+    if (tensor) 
     {
-        free(tensor->data);
-        free(tensor->grad);
-        free(tensor->shape);
-        free(tensor->stride);
+        if (tensor->data)
+        {
+            free(tensor->data);
+        }
+        if (tensor->grad)
+        {
+            free(tensor->grad);
+        }
+        if (tensor->shape)
+        {
+            free(tensor->shape);
+        }
+        if (tensor->stride)
+        {
+            free(tensor->stride);
+        }
         if (tensor->axes)
         {
             free(tensor->axes);
