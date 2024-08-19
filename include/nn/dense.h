@@ -12,7 +12,6 @@ typedef struct Dense
 
 Layer* dense_create(int input_dim, int output_dim);
 Tensor* dense_forward(Layer *self, Tensor *input);
-void dense_backward(Layer *self, float *grad);
 void dense_update_params(Layer *self, Optimizer *optimizer);
 void dense_free(Layer *self);
 

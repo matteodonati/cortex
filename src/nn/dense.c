@@ -18,7 +18,6 @@ Layer* dense_create(int input_dim, int output_dim)
     dense->base.weights = tensor_rand((int[]){output_dim, input_dim}, 2);
     dense->base.bias = tensor_zeros((int[]){output_dim}, 1);
     dense->base.forward = &dense_forward;
-    dense->base.backward = &dense_backward;
     dense->base.update_params = &dense_update_params;
     dense->base.free = &dense_free;
     return (Layer *)dense;
@@ -26,33 +25,26 @@ Layer* dense_create(int input_dim, int output_dim)
 
 Tensor* dense_forward(Layer *self, Tensor *input)
 {
+    // Store the input tensor
     self->input = input;
-    Tensor *z = tensor_matmul(input, tensor_transpose(self->weights, (int[]){1, 0}));
+
+    // Forward pass
+    Tensor *transposed_weights = tensor_transpose(self->weights, (int[]){1, 0});
+    Tensor *z = tensor_matmul(input, transposed_weights);
     Tensor *output = tensor_add(z, self->bias);
-    tensor_free(z);
+
+    // Set up backward functions and references
+    output->grad_a = z;
+    output->grad_b = self->bias;
+    output->backward = tensor_add_backward;
+    z->grad_a = input;
+    z->grad_b = transposed_weights;
+    z->backward = tensor_matmul_backward;
+
+    // Store the output tensor
     self->output = output;
+
     return output;
-}
-
-void dense_backward(Layer *self, float *grad)
-{
-    Tensor *grad_output = tensor_from_array(grad, self->output->shape, self->output->ndim);
-
-    // Calculate gradients
-    Tensor *grad_weights = tensor_matmul(tensor_transpose(grad_output, (int[]){1, 0}), self->input);
-    Tensor *grad_bias = tensor_sum(grad_output, 0);
-    Tensor *grad_input = tensor_matmul(grad_output, self->weights);
-
-    // Store gradients in the grad field of the respective Tensors
-    memcpy(self->weights->grad, grad_weights->data, grad_weights->size * sizeof(float));
-    memcpy(self->bias->grad, grad_bias->data, grad_bias->size * sizeof(float));
-    memcpy(self->input->grad, grad_input->data, grad_input->size * sizeof(float));
-
-    // Free the temporary gradient tensors
-    tensor_free(grad_weights);
-    tensor_free(grad_bias);
-    tensor_free(grad_input);
-    tensor_free(grad_output);
 }
 
 void dense_update_params(Layer *self, Optimizer *optimizer)

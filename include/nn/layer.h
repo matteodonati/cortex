@@ -14,7 +14,6 @@ typedef struct Layer
     Tensor *output;
     int layer_type;
     Tensor *(*forward)(struct Layer *self, Tensor *input);
-    void (*backward)(struct Layer *self, float *grad);
     void (*update_params)(struct Layer *self, Optimizer *optimizer);
     void (*free)(struct Layer *self);
 } Layer;
