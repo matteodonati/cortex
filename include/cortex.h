@@ -8,5 +8,6 @@
 #include "nn/layer.h"
 #include "nn/dense.h"
 #include "optim/optim.h"
+#include "optim/sgd.h"
 
 #endif

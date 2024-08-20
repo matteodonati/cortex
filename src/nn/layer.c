@@ -23,16 +23,6 @@ void layer_free(Layer *layer)
         {
             tensor_free(layer->bias);
         }
-        /*
-        if (layer->output)
-        {
-            tensor_free(layer->output);
-        }
-        if (layer->input)
-        {
-            tensor_free(layer->input);
-        }
-        */
         if (layer->free)
         {
             layer->free(layer);

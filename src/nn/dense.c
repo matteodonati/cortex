@@ -55,10 +55,10 @@ Tensor* dense_forward(Layer *self, Tensor *input)
 
 void dense_update_params(Layer *self, Optimizer *optimizer)
 {
-    optimizer->update(optimizer, self->weights, self->bias);
+    optimizer->step(optimizer, self->weights, self->bias);
 }
 
 void dense_free(Layer *self)
 {
-    free(self);
+    free((Dense *)self);
 }

@@ -3,15 +3,16 @@
 
 #include "tensor/tensor.h"
 
+#define OPTIM_TYPE_SGD 1
+
 typedef struct Optimizer 
 {
-    void (*update)(struct Optimizer *self, Tensor *weights, Tensor *bias);
     float learning_rate;
-    // Other parameters like momentum, beta1, beta2, etc.
+    int optim_type;
+    void (*step)(struct Optimizer *self, Tensor *weights, Tensor *bias);
+    void (*free)(struct Optimizer *self);
 } Optimizer;
 
-Optimizer* create_sgd_optimizer(float learning_rate);
-void sgd_update(Optimizer *self, Tensor *weights, Tensor *bias);
 void optimizer_free(Optimizer *optimizer);
 
 #endif
