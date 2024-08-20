@@ -12,7 +12,7 @@ typedef struct Dense
 
 Layer* dense_create(int input_dim, int output_dim);
 Tensor* dense_forward(Layer *self, Tensor *input);
-void dense_update_params(Layer *self, Optimizer *optimizer);
+Tensor** dense_get_params(Layer *self, int *num_params);
 void dense_free(Layer *self);
 
 #endif

@@ -337,7 +337,6 @@ Tensor* tensor_transpose(Tensor *tensor, int *axes)
     }
 
     Tensor *result = tensor_zeros(tensor->shape, tensor->ndim);
-    result->axes = (int*)malloc(result->ndim * sizeof(int));
 
     for (int i = 0; i < result->ndim; i++) 
     {

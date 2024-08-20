@@ -8,6 +8,10 @@ Tensor* initialize_tensor(int *shape, int ndim)
     tensor->ndim = ndim;
     tensor->shape = (int *)malloc(ndim * sizeof(int));
     tensor->stride = (int *)malloc(ndim * sizeof(int));
+    tensor->axes = (int *)malloc(ndim * sizeof(int));
+    tensor->backward = NULL;
+    tensor->grad_a = NULL;
+    tensor->grad_b = NULL;
 
     tensor->size = 1;
     for (int i = 0; i < ndim; i++) 
@@ -24,10 +28,6 @@ Tensor* initialize_tensor(int *shape, int ndim)
 
     tensor->data = (float *)malloc(tensor->size * sizeof(float));
     tensor->grad = (float*)calloc(tensor->size, sizeof(float));
-
-    tensor->backward = NULL;
-    tensor->grad_a = NULL;
-    tensor->grad_b = NULL;
 
     return tensor;
 }

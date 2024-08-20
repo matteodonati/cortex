@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include "optim/sgd.h"
 
-Optimizer* create_sgd_optimizer(float learning_rate) 
+Optimizer* sgd_create(float learning_rate) 
 {
     SGD *optimizer = (SGD *)malloc(sizeof(SGD));
     optimizer->base.learning_rate = learning_rate;
@@ -11,15 +11,15 @@ Optimizer* create_sgd_optimizer(float learning_rate)
     return (Optimizer *)optimizer;
 }
 
-void sgd_step(Optimizer *self, Tensor *weights, Tensor *bias) 
+void sgd_step(Optimizer *self, Tensor **params, int num_params) 
 {
-    for (int i = 0; i < weights->size; i++) 
+    for (int p = 0; p < num_params; p++) 
     {
-        weights->data[i] -= self->learning_rate * weights->grad[i];
-    }
-    for (int i = 0; i < bias->size; i++) 
-    {
-        bias->data[i] -= self->learning_rate * bias->grad[i];
+        Tensor *param = params[p];
+        for (int i = 0; i < param->size; i++) 
+        {
+            param->data[i] -= self->learning_rate * param->grad[i];
+        }
     }
 }
 

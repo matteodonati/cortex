@@ -8,8 +8,8 @@ typedef struct SGD
     Optimizer base;
 } SGD;
 
-Optimizer* create_sgd_optimizer(float learning_rate);
-void sgd_step(Optimizer *self, Tensor *weights, Tensor *bias);
+Optimizer* sgd_create(float learning_rate);
+void sgd_step(Optimizer *self, Tensor **params, int num_params);
 void sgd_free(Optimizer *self);
 
 #endif

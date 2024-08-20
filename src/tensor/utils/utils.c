@@ -125,19 +125,23 @@ void adjust_indices_for_broadcasting(Tensor *a, Tensor *b, int *a_index, int *b_
     *b_index = 0;
 
     int index = i;
-    for (int dim = 0; dim < a->ndim; dim++) 
+    for (int dim = 0; dim < (a->ndim > b->ndim ? a->ndim : b->ndim); dim++) 
     {
         int a_dim = a->ndim - 1 - dim;
         int b_dim = b->ndim - 1 - dim;
-        int stride = index % (a->shape[a_dim] > b->shape[b_dim] ? a->shape[a_dim] : b->shape[b_dim]);
-        index /= (a->shape[a_dim] > b->shape[b_dim] ? a->shape[a_dim] : b->shape[b_dim]);
 
-        if (a->shape[a_dim] > 1) 
+        int a_shape = (a_dim >= 0) ? a->shape[a_dim] : 1;
+        int b_shape = (b_dim >= 0) ? b->shape[b_dim] : 1;
+
+        int stride = index % (a_shape > b_shape ? a_shape : b_shape);
+        index /= (a_shape > b_shape ? a_shape : b_shape);
+
+        if (a_shape > 1 && a_dim >= 0) 
         {
             *a_index += stride * a->stride[a_dim];
         }
 
-        if (b->shape[b_dim] > 1) 
+        if (b_shape > 1 && b_dim >= 0) 
         {
             *b_index += stride * b->stride[b_dim];
         }

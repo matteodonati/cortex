@@ -15,7 +15,7 @@ Layer* dense_create(int input_dim, int output_dim)
     dense->base.weights = tensor_rand((int[]){output_dim, input_dim}, 2);
     dense->base.bias = tensor_zeros((int[]){output_dim}, 1);
     dense->base.forward = &dense_forward;
-    dense->base.update_params = &dense_update_params;
+    dense->base.get_params = &dense_get_params;
     dense->base.free = &dense_free;
     return (Layer *)dense;
 }
@@ -31,7 +31,7 @@ Tensor* dense_forward(Layer *self, Tensor *input)
     Tensor *output = tensor_add(z, self->bias);
 
     // Allocate memory for storing Tensor pointers
-    self->tensors = malloc(3 * sizeof(Tensor*));
+    self->tensors = (Tensor **)malloc(3 * sizeof(Tensor *));
     self->tensor_count = 0;
 
     // Store the created tensors in the list
@@ -53,9 +53,13 @@ Tensor* dense_forward(Layer *self, Tensor *input)
     return output;
 }
 
-void dense_update_params(Layer *self, Optimizer *optimizer)
+Tensor** dense_get_params(Layer *self, int *num_params) 
 {
-    optimizer->step(optimizer, self->weights, self->bias);
+    Tensor **params = (Tensor **)malloc(2 * sizeof(Tensor *));
+    params[0] = self->weights;
+    params[1] = self->bias;
+    *num_params = 2;
+    return params;
 }
 
 void dense_free(Layer *self)

@@ -22,22 +22,26 @@ int main()
     Tensor *input = tensor_from_array(input_data, input_shape, 2);
 
     // First Dense layer, shape {4, 3}
-    Layer *dense_layer1 = dense_create(4, 3);
-    float weight_data1[] = {0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2};
-    float bias_data1[] = {0.5, 0.5, 0.5};
-    memcpy(dense_layer1->weights->data, weight_data1, sizeof(weight_data1));
-    memcpy(dense_layer1->bias->data, bias_data1, sizeof(bias_data1));
+    Layer *fc1 = dense_create(4, 3);
+    float w1[] = {0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2};
+    float b1[] = {0.5, 0.5, 0.5};
+    memcpy(fc1->weights->data, w1, sizeof(w1));
+    memcpy(fc1->bias->data, b1, sizeof(b1));
 
     // Second Dense layer, shape {3, 2}
-    Layer *dense_layer2 = dense_create(3, 2);
-    float weight_data2[] = {0.1, 0.2, 0.3, 0.4, 0.5, 0.6};
-    float bias_data2[] = {0.1, 0.1};
-    memcpy(dense_layer2->weights->data, weight_data2, sizeof(weight_data2));
-    memcpy(dense_layer2->bias->data, bias_data2, sizeof(bias_data2));
+    Layer *fc2 = dense_create(3, 2);
+    float w2[] = {0.1, 0.2, 0.3, 0.4, 0.5, 0.6};
+    float b2[] = {0.1, 0.1};
+    memcpy(fc2->weights->data, w2, sizeof(w2));
+    memcpy(fc2->bias->data, b2, sizeof(b2));
+
+    // Create the model and add layers
+    Layer *layers[] = {fc1, fc2};
+    Model *model = model_create(layers, 2);
 
     // Forward pass
-    Tensor *hidden_output = dense_layer1->forward(dense_layer1, input);
-    Tensor *output = dense_layer2->forward(dense_layer2, hidden_output);
+    Tensor *hidden = fc1->forward(fc1, input);
+    Tensor *output = fc2->forward(fc2, hidden);
 
     // Set the gradient of the output tensor
     for (int i = 0; i < output->size; i++)
@@ -45,26 +49,26 @@ int main()
         output->grad[i] = 1.0;
     }
 
-    // Create an optimizer and update parameters
-    Optimizer *sgd = create_sgd_optimizer(0.01);
+    // Create an optimizer
+    Optimizer *sgd = sgd_create(0.01);
 
     // Backward pass
     output->backward(output, output->grad);
-    sgd->step(sgd, dense_layer2->weights, dense_layer2->bias);
-    sgd->step(sgd, dense_layer1->weights, dense_layer1->bias);
+
+    // Perform a single optimization step for all parameters in the model
+    sgd->step(sgd, model->params, model->num_params);
 
     // Print results
-    print_tensor(output, "Output");
-    print_tensor(dense_layer2->weights, "Weights layer 2 (after update)");
-    print_tensor(dense_layer2->bias, "Bias layer 2 (after update)");
-    print_tensor(dense_layer1->weights, "Weights layer 1 (after update)");
-    print_tensor(dense_layer1->bias, "Bias layer 1 (after update)");
+    print_tensor(output, "output");
+    print_tensor(fc2->weights, "weights fc2 (after update)");
+    print_tensor(fc2->bias, "bias fc2 (after update)");
+    print_tensor(fc1->weights, "weights fc1 (after update)");
+    print_tensor(fc1->bias, "bias fc1 (after update)");
 
     // Free memory
     tensor_free(input);
     optimizer_free(sgd);
-    layer_free(dense_layer1);
-    layer_free(dense_layer2);
+    model_free(model);
 
     return 0;
 }
