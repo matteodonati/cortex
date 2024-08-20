@@ -44,7 +44,7 @@ Tensor* tensor_rand(int *shape, int ndim)
     Tensor *tensor = initialize_tensor(shape, ndim);
     for (int i = 0; i < tensor->size; i++) 
     {
-        tensor->data[i] = (float)rand() / RAND_MAX;
+        tensor->data[i] = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
     }
     return tensor;
 }
