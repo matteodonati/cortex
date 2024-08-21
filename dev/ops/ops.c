@@ -20,8 +20,8 @@ void tensor_ops()
     int ndim_a = 4;
     int shape_a[] = {2, 3, 4, 6};
 
-    Tensor *a = tensor_full(shape_a, ndim_a, 3.0);
-    Tensor *b = tensor_full(shape_a, ndim_a, 4.0);
+    Tensor *a = tensor_full("a", shape_a, ndim_a, 3.0);
+    Tensor *b = tensor_full("b", shape_a, ndim_a, 4.0);
 
     // Unary operations
     Tensor *neg = tensor_negate(a);
@@ -168,8 +168,8 @@ void tensor_matmul_op()
     int shape_a[] = {2, 3, 4, 6};
     int shape_b[] = {2, 3, 6, 5};
 
-    Tensor *a = tensor_full(shape_a, ndim_a, 3.0);
-    Tensor *b = tensor_full(shape_b, ndim_b, 4.0);
+    Tensor *a = tensor_full("a", shape_a, ndim_a, 3.0);
+    Tensor *b = tensor_full("b", shape_b, ndim_b, 4.0);
 
     // Matmul operation
     Tensor *matmul = tensor_matmul(a, b);

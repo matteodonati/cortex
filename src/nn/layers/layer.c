@@ -1,6 +1,5 @@
 #include <stdlib.h>
-#include "nn/layer.h"
-#include "tensor/tensor.h"
+#include "nn/layers/layer.h"
 
 void layer_free(Layer *layer)
 {
@@ -14,13 +13,12 @@ void layer_free(Layer *layer)
             }
             free(layer->tensors);
         }
-        if (layer->weights)
+        if (layer->params)
         {
-            tensor_free(layer->weights);
-        }
-        if (layer->bias)
-        {
-            tensor_free(layer->bias);
+            if (layer->params->free)
+            {
+                layer->params->free(layer->params);
+            }
         }
         if (layer->name) 
         {
