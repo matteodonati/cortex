@@ -108,3 +108,84 @@ void model_load(Model *model, const char *filename)
     }
     fclose(file);
 }
+
+void model_summary(Model *model) 
+{
+    printf("=======================================================\n");
+    printf("        Layer (type)        Output Shape        Param #\n");
+    printf("-------------------------------------------------------\n");
+
+    size_t total_params = 0;
+    size_t trainable_params = 0;
+    size_t non_trainable_params = 0;
+
+    float input_size = 0.0f;
+    float forward_size = 0.0f;
+    float params_size = 0.0f;
+
+    for (int i = 0; i < model->num_layers; i++) 
+    {
+        Layer *layer = model->layers[i];
+        Parameters *params = layer->params;
+        
+        size_t num_layer_params = 0;
+        size_t trainable_layer_params = 0;
+
+        // Calculate the number of parameters and their sizes
+        for (int j = 0; j < params->num_params; j++) 
+        {
+            Tensor *param = params->get_params(params)[j];
+            size_t param_size = 1;
+            for (int k = 0; k < param->ndim; k++) 
+            {
+                param_size *= param->shape[k];
+            }
+            num_layer_params += param_size;
+
+            if (!param->frozen) 
+            {
+                trainable_layer_params += param_size;
+            }
+
+            // Accumulate parameter memory size
+            params_size += param_size * sizeof(float) / (1024.0 * 1024.0);
+        }
+
+        // Output shape could be obtained from the layer's output tensor
+        char output_shape[256] = "";
+        sprintf(output_shape, "[-1");
+        for (int dim = 0; dim < layer->output->ndim; dim++) 
+        {
+            sprintf(output_shape + strlen(output_shape), ", %d", layer->output->shape[dim]);
+        }
+        sprintf(output_shape + strlen(output_shape), "]");
+
+        // Print the layer summary
+        printf("%15s %24s %14zu\n", layer->name, output_shape, num_layer_params);
+
+        total_params += num_layer_params;
+        trainable_params += trainable_layer_params;
+        non_trainable_params += (num_layer_params - trainable_layer_params);
+
+        // Calculate memory sizes for input and forward/backward pass
+        size_t output_size = 1;
+        for (int dim = 0; dim < layer->output->ndim; dim++) 
+        {
+            output_size *= layer->output->shape[dim];
+        }
+
+        input_size += output_size * sizeof(float) / (1024.0 * 1024.0);
+        forward_size += 2 * output_size * sizeof(float) / (1024.0 * 1024.0); // For both forward and backward pass
+    }
+
+    printf("-------------------------------------------------------\n");
+    printf("Total parameters: %zu\n", total_params);
+    printf("Trainable parameters: %zu\n", trainable_params);
+    printf("Non-trainable parameters: %zu\n", non_trainable_params);
+    printf("-------------------------------------------------------\n");
+    printf("Input size (MB): %.2f\n", input_size);
+    printf("Forward/backward pass size (MB): %.2f\n", forward_size);
+    printf("Params size (MB): %.2f\n", params_size);
+    printf("Estimated total size (MB): %.2f\n", input_size + forward_size + params_size);
+    printf("=======================================================\n");
+}
