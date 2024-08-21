@@ -13,12 +13,17 @@ Optimizer* sgd_create(float learning_rate)
 
 void sgd_step(Optimizer *self, Tensor **params, int num_params) 
 {
-    for (int p = 0; p < num_params; p++) 
+    for (int i = 0; i < num_params; i++) 
     {
-        Tensor *param = params[p];
-        for (int i = 0; i < param->size; i++) 
+        Tensor *param = params[i];
+        if (param->frozen) 
         {
-            param->data[i] -= self->learning_rate * param->grad[i];
+            continue;
+        }
+
+        for (int j = 0; j < param->size; j++) 
+        {
+            param->data[j] -= self->learning_rate * param->grad[j];
         }
     }
 }

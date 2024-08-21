@@ -13,6 +13,7 @@ typedef struct Dense
 Layer* dense_create(int input_dim, int output_dim);
 Tensor* dense_forward(Layer *self, Tensor *input);
 Tensor** dense_get_params(Layer *self, int *num_params);
+void dense_freeze_params(Layer *self);
 void dense_free(Layer *self);
 
 #endif

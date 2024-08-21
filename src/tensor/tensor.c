@@ -9,6 +9,7 @@ Tensor* initialize_tensor(int *shape, int ndim)
     tensor->shape = (int *)malloc(ndim * sizeof(int));
     tensor->stride = (int *)malloc(ndim * sizeof(int));
     tensor->axes = (int *)malloc(ndim * sizeof(int));
+    tensor->frozen = 0;
     tensor->backward = NULL;
     tensor->grad_a = NULL;
     tensor->grad_b = NULL;

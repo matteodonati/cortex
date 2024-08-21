@@ -9,6 +9,7 @@ typedef struct Tensor {
     int *axes;
     int ndim;
     int size;
+    int frozen;
     void (*backward)(struct Tensor *self, float *grad);
     struct Tensor *grad_a;
     struct Tensor *grad_b;

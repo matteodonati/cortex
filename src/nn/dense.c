@@ -16,6 +16,7 @@ Layer* dense_create(int input_dim, int output_dim)
     dense->base.bias = tensor_zeros((int[]){output_dim}, 1);
     dense->base.forward = &dense_forward;
     dense->base.get_params = &dense_get_params;
+    dense->base.freeze_params = &dense_freeze_params;
     dense->base.free = &dense_free;
     return (Layer *)dense;
 }
@@ -60,6 +61,18 @@ Tensor** dense_get_params(Layer *self, int *num_params)
     params[1] = self->bias;
     *num_params = 2;
     return params;
+}
+
+void dense_freeze_params(Layer *self) 
+{
+    if (self->weights) 
+    {
+        self->weights->frozen = 1;
+    }
+    if (self->bias) 
+    {
+        self->bias->frozen = 1;
+    }
 }
 
 void dense_free(Layer *self)
