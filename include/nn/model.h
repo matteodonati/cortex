@@ -2,7 +2,6 @@
 #define NN_MODEL_H
 
 #include "nn/layer.h"
-#include "tensor/tensor.h"
 
 typedef struct Model 
 {
@@ -13,6 +12,8 @@ typedef struct Model
 } Model;
 
 Model* model_create(Layer **layers, int num_layers);
+void model_save(Model *model, const char *filename);
+void model_load(Model *model, const char *filename);
 void model_free(Model *model);
 
 #endif

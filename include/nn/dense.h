@@ -1,7 +1,7 @@
 #ifndef NN_DENSE_H
 #define NN_DENSE_H
 
-#include "layer.h"
+#include "nn/layer.h"
 
 typedef struct Dense 
 {
@@ -10,7 +10,7 @@ typedef struct Dense
     int output_dim;
 } Dense;
 
-Layer* dense_create(int input_dim, int output_dim);
+Layer* dense_create(const char *name, int input_dim, int output_dim);
 Tensor* dense_forward(Layer *self, Tensor *input);
 Tensor** dense_get_params(Layer *self, int *num_params);
 void dense_freeze_params(Layer *self);

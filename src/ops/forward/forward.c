@@ -14,7 +14,7 @@ Tensor* tensor_negate(Tensor *tensor)
         exit(EXIT_FAILURE);
     }
 
-    Tensor *result = tensor_like(tensor);
+    Tensor *result = tensor_like(NULL, tensor);
     for (int i = 0; i < tensor->size; i++) 
     {
         result->data[i] = -tensor->data[i];
@@ -33,7 +33,7 @@ Tensor* tensor_abs(Tensor *tensor)
         exit(EXIT_FAILURE);
     }
 
-    Tensor *result = tensor_like(tensor);
+    Tensor *result = tensor_like(NULL, tensor);
     for (int i = 0; i < tensor->size; i++) 
     {
         result->data[i] = fabs(tensor->data[i]);
@@ -52,7 +52,7 @@ Tensor* tensor_sqrt(Tensor *tensor)
         exit(EXIT_FAILURE);
     }
 
-    Tensor *result = tensor_like(tensor);
+    Tensor *result = tensor_like(NULL, tensor);
     for (int i = 0; i < tensor->size; i++) 
     {
         result->data[i] = sqrt(tensor->data[i]);
@@ -71,7 +71,7 @@ Tensor* tensor_exp(Tensor *tensor)
         exit(EXIT_FAILURE);
     }
 
-    Tensor *result = tensor_like(tensor);
+    Tensor *result = tensor_like(NULL, tensor);
     for (int i = 0; i < tensor->size; i++) 
     {
         result->data[i] = exp(tensor->data[i]);
@@ -90,7 +90,7 @@ Tensor* tensor_log(Tensor *tensor)
         exit(EXIT_FAILURE);
     }
 
-    Tensor *result = tensor_like(tensor);
+    Tensor *result = tensor_like(NULL, tensor);
     for (int i = 0; i < tensor->size; i++)
     {
         result->data[i] = log(tensor->data[i]);
@@ -114,7 +114,7 @@ Tensor* tensor_add(Tensor *a, Tensor *b)
         exit(EXIT_FAILURE);
     }
 
-    Tensor *result = tensor_like(a->size >= b->size ? a : b);
+    Tensor *result = tensor_like(NULL, a->size >= b->size ? a : b);
     for (int i = 0; i < result->size; i++) 
     {
         int a_index, b_index;
@@ -141,7 +141,7 @@ Tensor* tensor_sub(Tensor *a, Tensor *b)
         exit(EXIT_FAILURE);
     }
 
-    Tensor *result = tensor_like(a->size >= b->size ? a : b);
+    Tensor *result = tensor_like(NULL, a->size >= b->size ? a : b);
     for (int i = 0; i < result->size; i++) 
     {
         int a_index, b_index;
@@ -168,7 +168,7 @@ Tensor* tensor_mul(Tensor *a, Tensor *b)
         exit(EXIT_FAILURE);
     }
 
-    Tensor *result = tensor_like(a->size >= b->size ? a : b);
+    Tensor *result = tensor_like(NULL, a->size >= b->size ? a : b);
     for (int i = 0; i < result->size; i++) 
     {
         int a_index, b_index;
@@ -195,7 +195,7 @@ Tensor* tensor_div(Tensor *a, Tensor *b)
         exit(EXIT_FAILURE);
     }
 
-    Tensor *result = tensor_like(a->size >= b->size ? a : b);
+    Tensor *result = tensor_like(NULL, a->size >= b->size ? a : b);
     for (int i = 0; i < result->size; i++) 
     {
         int a_index, b_index;
@@ -217,7 +217,7 @@ Tensor* tensor_scalar_mul(Tensor *tensor, float scalar)
         exit(EXIT_FAILURE);
     }
 
-    Tensor *result = tensor_like(tensor);
+    Tensor *result = tensor_like(NULL, tensor);
     for (int i = 0; i < tensor->size; i++) 
     {
         result->data[i] = tensor->data[i] * scalar;
@@ -255,10 +255,11 @@ Tensor* tensor_matmul(Tensor *a, Tensor *b)
     int k = a->shape[a->ndim - 1];
     int n = b->shape[b->ndim - 1];
 
-    // Determine the output shape
+    // Output ndim
     int out_ndim = (a_ndim > b_ndim) ? a_ndim : b_ndim;
+
+    // Output shape
     int *out_shape = (int*)malloc(out_ndim * sizeof(int));
-    int *out_stride = (int*)malloc(out_ndim * sizeof(int));
     for (int i = 0; i < out_ndim - 2; i++) 
     {
         out_shape[i] = (a->ndim >= b->ndim) ? a->shape[i] : b->shape[i];
@@ -267,26 +268,10 @@ Tensor* tensor_matmul(Tensor *a, Tensor *b)
     out_shape[out_ndim - 1] = n;
 
     // Create the result Tensor
-    Tensor *result = (Tensor *)malloc(sizeof(Tensor));
-    result->shape = out_shape;
-    result->stride = out_stride;
-    result->ndim = out_ndim;
-    result->size = 1;
-    result->stride[out_ndim - 1] = 1;
-    for (int i = out_ndim - 2; i >= 0; i--) 
-    {
-        result->stride[i] = result->stride[i + 1] * result->shape[i + 1];
-    }
-    for (int i = 0; i < out_ndim; i++) 
-    {
-        result->size *= out_shape[i];
-    }
-    result->data = (float*)malloc(result->size * sizeof(float));
-    result->grad = (float*)calloc(result->size, sizeof(float));
+    Tensor *result = tensor_zeros(NULL, out_shape, out_ndim);
 
     // Perform matrix multiplication
-    int batch_size = result->size / (m * n);
-    for (int batch = 0; batch < batch_size; batch++) 
+    for (int batch = 0; batch < result->size / (m * n); batch++) 
     {
         for (int i = 0; i < m; i++) 
         {
@@ -308,6 +293,8 @@ Tensor* tensor_matmul(Tensor *a, Tensor *b)
     result->grad_a = a;
     result->grad_b = b;
 
+    free(out_shape);
+
     return result;
 }
 
@@ -319,7 +306,7 @@ Tensor* tensor_reshape(Tensor *tensor, int *new_shape, int new_ndim)
         exit(EXIT_FAILURE);
     }
 
-    Tensor *result = tensor_zeros(new_shape, new_ndim);
+    Tensor *result = tensor_zeros(NULL, new_shape, new_ndim);
     memcpy(result->data, tensor->data, tensor->size * sizeof(float));
     memcpy(result->grad, tensor->grad, tensor->size * sizeof(float));
     result->backward = &tensor_reshape_backward;
@@ -336,8 +323,7 @@ Tensor* tensor_transpose(Tensor *tensor, int *axes)
         exit(EXIT_FAILURE);
     }
 
-    Tensor *result = tensor_zeros(tensor->shape, tensor->ndim);
-
+    Tensor *result = tensor_zeros(NULL, tensor->shape, tensor->ndim);
     for (int i = 0; i < result->ndim; i++) 
     {
         result->shape[i] = tensor->shape[axes[i]];
@@ -389,7 +375,7 @@ Tensor* tensor_max(Tensor *tensor, int axis)
         }
     }
 
-    Tensor *result = tensor_zeros(new_shape, new_ndim);
+    Tensor *result = tensor_zeros(NULL, new_shape, new_ndim);
 
     // Initialize the result tensor data with negative infinity
     for (int i = 0; i < result->size; i++) 
@@ -446,7 +432,7 @@ Tensor* tensor_min(Tensor *tensor, int axis)
         }
     }
 
-    Tensor *result = tensor_zeros(new_shape, new_ndim);
+    Tensor *result = tensor_zeros(NULL, new_shape, new_ndim);
 
     // Initialize the result tensor data with positive infinity
     for (int i = 0; i < result->size; i++) 
@@ -503,7 +489,7 @@ Tensor* tensor_argmax(Tensor *tensor, int axis)
         }
     }
 
-    Tensor *result = tensor_zeros(new_shape, new_ndim);
+    Tensor *result = tensor_zeros(NULL, new_shape, new_ndim);
     result->grad = NULL; // No gradient for argmax
 
     // Initialize the result tensor data with -1 (invalid index)
@@ -556,7 +542,7 @@ Tensor* tensor_argmin(Tensor *tensor, int axis)
         }
     }
 
-    Tensor *result = tensor_zeros(new_shape, new_ndim);
+    Tensor *result = tensor_zeros(NULL, new_shape, new_ndim);
     result->grad = NULL; // No gradient for argmin
 
     // Initialize the result tensor data with -1 (invalid index)
@@ -609,7 +595,7 @@ Tensor* tensor_sum(Tensor *tensor, int axis)
         }
     }
 
-    Tensor *result = tensor_zeros(new_shape, new_ndim);
+    Tensor *result = tensor_zeros(NULL, new_shape, new_ndim);
 
     // Perform the sum operation
     for (int i = 0; i < tensor->size; i++) 
@@ -672,7 +658,7 @@ Tensor* tensor_cat(Tensor *a, Tensor *b, int axis)
         new_shape[i] = (i == axis) ? (a->shape[i] + b->shape[i]) : a->shape[i];
     }
 
-    Tensor *result = tensor_zeros(new_shape, a->ndim);
+    Tensor *result = tensor_zeros(NULL, new_shape, a->ndim);
 
     // Copy data from the first tensor to the result tensor
     for (int i = 0; i < a->size; i++) 

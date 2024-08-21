@@ -2,6 +2,7 @@
 #define TENSOR_H
 
 typedef struct Tensor {
+    char *name;
     float *data;
     float *grad;
     int *shape;
@@ -15,13 +16,13 @@ typedef struct Tensor {
     struct Tensor *grad_b;
 } Tensor;
 
-Tensor* initialize_tensor(int *shape, int ndim);
-Tensor* tensor_from_array(float *array, int *shape, int ndim);
-Tensor* tensor_rand(int *shape, int ndim);
-Tensor* tensor_zeros(int *shape, int ndim);
-Tensor* tensor_ones(int *shape, int ndim);
-Tensor* tensor_full(int *shape, int ndim, float value);
-Tensor* tensor_like(Tensor *a);
+Tensor* initialize_tensor(const char *name, int *shape, int ndim);
+Tensor* tensor_from_array(const char *name, float *array, int *shape, int ndim);
+Tensor* tensor_rand(const char *name, int *shape, int ndim);
+Tensor* tensor_zeros(const char *name, int *shape, int ndim);
+Tensor* tensor_ones(const char *name, int *shape, int ndim);
+Tensor* tensor_full(const char *name, int *shape, int ndim, float value);
+Tensor* tensor_like(const char *name, Tensor *a);
 void tensor_free(Tensor *tensor);
 
 #endif

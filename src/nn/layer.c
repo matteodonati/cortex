@@ -14,7 +14,6 @@ void layer_free(Layer *layer)
             }
             free(layer->tensors);
         }
-
         if (layer->weights)
         {
             tensor_free(layer->weights);
@@ -22,6 +21,10 @@ void layer_free(Layer *layer)
         if (layer->bias)
         {
             tensor_free(layer->bias);
+        }
+        if (layer->name) 
+        {
+            free(layer->name);
         }
         if (layer->free)
         {

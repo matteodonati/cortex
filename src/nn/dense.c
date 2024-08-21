@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "nn/dense.h"
@@ -6,18 +7,30 @@
 #include "ops/backward/backward.h"
 #include "optim/optim.h"
 
-Layer* dense_create(int input_dim, int output_dim)
+Layer* dense_create(const char *name, int input_dim, int output_dim)
 {
     Dense *dense = (Dense *)malloc(sizeof(Dense));
+    
+    dense->base.name = (char *)malloc((strlen(name) + 1) * sizeof(char));
+    strcpy(dense->base.name, name);
+    
     dense->input_dim = input_dim;
     dense->output_dim = output_dim;
     dense->base.layer_type = LAYER_TYPE_DENSE;
-    dense->base.weights = tensor_rand((int[]){output_dim, input_dim}, 2);
-    dense->base.bias = tensor_zeros((int[]){output_dim}, 1);
+
+    char weights_name[256];
+    snprintf(weights_name, sizeof(weights_name), "%s.weight", name);
+    dense->base.weights = tensor_rand(weights_name, (int[]){output_dim, input_dim}, 2);
+
+    char bias_name[256];
+    snprintf(bias_name, sizeof(bias_name), "%s.bias", name);
+    dense->base.bias = tensor_zeros(bias_name, (int[]){output_dim}, 1);
+
     dense->base.forward = &dense_forward;
     dense->base.get_params = &dense_get_params;
     dense->base.freeze_params = &dense_freeze_params;
     dense->base.free = &dense_free;
+    
     return (Layer *)dense;
 }
 
@@ -31,11 +44,9 @@ Tensor* dense_forward(Layer *self, Tensor *input)
     Tensor *z = tensor_matmul(input, transposed_weights);
     Tensor *output = tensor_add(z, self->bias);
 
-    // Allocate memory for storing Tensor pointers
+    // Store the created tensors in the tensors list
     self->tensors = (Tensor **)malloc(3 * sizeof(Tensor *));
     self->tensor_count = 0;
-
-    // Store the created tensors in the list
     self->tensors[self->tensor_count++] = transposed_weights;
     self->tensors[self->tensor_count++] = z;
     self->tensors[self->tensor_count++] = output;

@@ -2,9 +2,15 @@
 #include <string.h>
 #include "tensor/tensor.h"
 
-Tensor* initialize_tensor(int *shape, int ndim) 
+Tensor* initialize_tensor(const char *name, int *shape, int ndim) 
 {
     Tensor *tensor = (Tensor *)malloc(sizeof(Tensor));
+    tensor->name = NULL;
+    if (name)
+    {
+        tensor->name = (char *)malloc((strlen(name) + 1) * sizeof(char));
+        strcpy(tensor->name, name);
+    }
     tensor->ndim = ndim;
     tensor->shape = (int *)malloc(ndim * sizeof(int));
     tensor->stride = (int *)malloc(ndim * sizeof(int));
@@ -33,16 +39,16 @@ Tensor* initialize_tensor(int *shape, int ndim)
     return tensor;
 }
 
-Tensor* tensor_from_array(float *array, int *shape, int ndim) 
+Tensor* tensor_from_array(const char *name, float *array, int *shape, int ndim) 
 {
-    Tensor *tensor = initialize_tensor(shape, ndim);
+    Tensor *tensor = initialize_tensor(name, shape, ndim);
     memcpy(tensor->data, array, tensor->size * sizeof(float));
     return tensor;
 }
 
-Tensor* tensor_rand(int *shape, int ndim) 
+Tensor* tensor_rand(const char *name, int *shape, int ndim) 
 {
-    Tensor *tensor = initialize_tensor(shape, ndim);
+    Tensor *tensor = initialize_tensor(name, shape, ndim);
     for (int i = 0; i < tensor->size; i++) 
     {
         tensor->data[i] = 2.0f * ((float)rand() / RAND_MAX) - 1.0f;
@@ -50,16 +56,16 @@ Tensor* tensor_rand(int *shape, int ndim)
     return tensor;
 }
 
-Tensor* tensor_zeros(int *shape, int ndim) 
+Tensor* tensor_zeros(const char *name, int *shape, int ndim) 
 {
-    Tensor *tensor = initialize_tensor(shape, ndim);
+    Tensor *tensor = initialize_tensor(name, shape, ndim);
     memset(tensor->data, 0, tensor->size * sizeof(float));
     return tensor;
 }
 
-Tensor* tensor_ones(int *shape, int ndim) 
+Tensor* tensor_ones(const char *name, int *shape, int ndim) 
 {
-    Tensor *tensor = initialize_tensor(shape, ndim);
+    Tensor *tensor = initialize_tensor(name, shape, ndim);
     for (int i = 0; i < tensor->size; i++) 
     {
         tensor->data[i] = 1.0f;
@@ -67,9 +73,9 @@ Tensor* tensor_ones(int *shape, int ndim)
     return tensor;
 }
 
-Tensor* tensor_full(int *shape, int ndim, float value) 
+Tensor* tensor_full(const char *name, int *shape, int ndim, float value) 
 {
-    Tensor *tensor = initialize_tensor(shape, ndim);
+    Tensor *tensor = initialize_tensor(name, shape, ndim);
     for (int i = 0; i < tensor->size; i++) 
     {
         tensor->data[i] = value;
@@ -77,9 +83,9 @@ Tensor* tensor_full(int *shape, int ndim, float value)
     return tensor;
 }
 
-Tensor* tensor_like(Tensor *a) 
+Tensor* tensor_like(const char *name, Tensor *a) 
 {
-    return initialize_tensor(a->shape, a->ndim);
+    return initialize_tensor(name, a->shape, a->ndim);
 }
 
 void tensor_free(Tensor *tensor) 
@@ -105,6 +111,10 @@ void tensor_free(Tensor *tensor)
         if (tensor->axes)
         {
             free(tensor->axes);
+        }
+        if (tensor->name)
+        {
+            free(tensor->name);
         }
         free(tensor);
     }
