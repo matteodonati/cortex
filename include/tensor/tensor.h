@@ -1,16 +1,24 @@
 #ifndef TENSOR_H
 #define TENSOR_H
 
-typedef struct Tensor {
+typedef struct TensorOpsUtils
+{
+    int working_axis;
+    int *working_axes;
+    float working_scalar;
+} TensorOpsUtils;
+
+typedef struct Tensor 
+{
     char *name;
     float *data;
     float *grad;
     int *shape;
     int *stride;
-    int *axes;
     int ndim;
     int size;
     int frozen;
+    TensorOpsUtils ops_utils;
     void (*backward)(struct Tensor *self, float *grad);
     struct Tensor *grad_a;
     struct Tensor *grad_b;

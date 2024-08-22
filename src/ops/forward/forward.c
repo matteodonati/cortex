@@ -222,6 +222,7 @@ Tensor* tensor_scalar_mul(Tensor *tensor, float scalar)
     {
         result->data[i] = tensor->data[i] * scalar;
     }
+    result->ops_utils.working_scalar = scalar;
     result->backward = &tensor_scalar_mul_backward;
     result->grad_a = tensor;
 
@@ -327,7 +328,7 @@ Tensor* tensor_transpose(Tensor *tensor, int *axes)
     for (int i = 0; i < result->ndim; i++) 
     {
         result->shape[i] = tensor->shape[axes[i]];
-        result->axes[i] = axes[i];
+        result->ops_utils.working_axes[i] = axes[i];
     }
 
     result->stride[result->ndim - 1] = 1;
@@ -407,6 +408,7 @@ Tensor* tensor_max(Tensor *tensor, int axis)
         }
     }
 
+    result->ops_utils.working_axis = axis;
     result->backward = &tensor_max_backward;
     result->grad_a = tensor;
 
@@ -464,6 +466,7 @@ Tensor* tensor_min(Tensor *tensor, int axis)
         }
     }
 
+    result->ops_utils.working_axis = axis;
     result->backward = &tensor_min_backward;
     result->grad_a = tensor;
 
@@ -616,6 +619,7 @@ Tensor* tensor_sum(Tensor *tensor, int axis)
         result->data[result_index] += tensor->data[i];
     }
 
+    result->ops_utils.working_axis = axis;
     result->backward = &tensor_sum_backward;
     result->grad_a = tensor;
 
@@ -630,14 +634,47 @@ Tensor* tensor_mean(Tensor *tensor, int axis)
         exit(EXIT_FAILURE);
     }
 
-    Tensor *result = tensor_sum(tensor, axis);
+    int new_ndim = tensor->ndim - 1;
+    int *new_shape = (int*)malloc(new_ndim * sizeof(int));
+
+    for (int i = 0, j = 0; i < tensor->ndim; i++) 
+    {
+        if (i != axis) 
+        {
+            new_shape[j++] = tensor->shape[i];
+        }
+    }
+
+    Tensor *result = tensor_zeros(NULL, new_shape, new_ndim);
     
     int divisor = tensor->shape[axis];
+
+    // Perform sum
+    for (int i = 0; i < tensor->size; i++) 
+    {
+        int result_index = 0;
+        int old_index = i;
+
+        for (int d = tensor->ndim - 1, k = new_ndim - 1; d >= 0; d--) 
+        {
+            if (d == axis) 
+            {
+                continue;
+            }
+            int coord = (old_index / tensor->stride[d]) % tensor->shape[d];
+            result_index += coord * result->stride[k--];
+        }
+
+        result->data[result_index] += tensor->data[i];
+    }
+
+    // Divide by the number of elements along the axis
     for (int i = 0; i < result->size; i++) 
     {
         result->data[i] /= divisor;
     }
 
+    result->ops_utils.working_axis = axis;
     result->backward = &tensor_mean_backward;
     result->grad_a = tensor;
 
@@ -694,6 +731,7 @@ Tensor* tensor_cat(Tensor *a, Tensor *b, int axis)
         result->data[result_index] = b->data[i];
     }
 
+    result->ops_utils.working_axis = axis;
     result->backward = &tensor_cat_backward;
     result->grad_a = a;
     result->grad_b = b;

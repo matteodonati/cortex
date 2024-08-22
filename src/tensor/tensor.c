@@ -14,7 +14,7 @@ Tensor* initialize_tensor(const char *name, int *shape, int ndim)
     tensor->ndim = ndim;
     tensor->shape = (int *)malloc(ndim * sizeof(int));
     tensor->stride = (int *)malloc(ndim * sizeof(int));
-    tensor->axes = (int *)malloc(ndim * sizeof(int));
+    tensor->ops_utils.working_axes = (int *)malloc(ndim * sizeof(int));
     tensor->frozen = 0;
     tensor->backward = NULL;
     tensor->grad_a = NULL;
@@ -108,9 +108,9 @@ void tensor_free(Tensor *tensor)
         {
             free(tensor->stride);
         }
-        if (tensor->axes)
+        if (tensor->ops_utils.working_axes)
         {
-            free(tensor->axes);
+            free(tensor->ops_utils.working_axes);
         }
         if (tensor->name)
         {

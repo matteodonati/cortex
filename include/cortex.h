@@ -11,6 +11,8 @@
 #include "nn/layers/dense.h"
 #include "nn/model/model.h"
 #include "nn/model/utils/utils.h"
+#include "nn/activations/forward/forward.h"
+#include "nn/activations/backward/backward.h"
 #include "optim/optim.h"
 #include "optim/sgd.h"
 
