@@ -47,14 +47,6 @@ Tensor* dense_forward(Layer *self, Tensor *input)
     self->tensors[self->tensor_count++] = z;
     self->tensors[self->tensor_count++] = output;
 
-    // Set up backward functions and references
-    output->grad_a = z;
-    output->grad_b = params->bias;
-    output->backward = tensor_add_backward;
-    z->grad_a = input;
-    z->grad_b = transposed_weights;
-    z->backward = tensor_matmul_backward;
-
     // Store the output tensor
     self->output = output;
 

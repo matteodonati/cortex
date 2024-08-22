@@ -5,6 +5,5 @@
 
 void model_save(Model *model, const char *filename);
 void model_load(Model *model, const char *filename);
-void model_summary(Model *model);
 
 #endif

@@ -18,9 +18,11 @@ Model* model_create(Layer **layers, int num_layers)
         {
             Tensor **params = layer_params->get_params(layer_params);
             int num_params = layer_params->num_params;
+
             model->params = (Tensor **)realloc(model->params, (model->num_params + num_params) * sizeof(Tensor *));
             memcpy(model->params + model->num_params, params, num_params * sizeof(Tensor *));
             model->num_params += num_params;
+            
             free(params);
         }
     }

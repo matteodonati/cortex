@@ -15,10 +15,7 @@ void layer_free(Layer *layer)
         }
         if (layer->params)
         {
-            if (layer->params->free)
-            {
-                layer->params->free(layer->params);
-            }
+            parameters_free(layer->params);
         }
         if (layer->name) 
         {

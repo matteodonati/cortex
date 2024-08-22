@@ -11,4 +11,6 @@ typedef struct Parameters
     void (*free)(struct Parameters *self);
 } Parameters;
 
+void parameters_free(Parameters *params);
+
 #endif
