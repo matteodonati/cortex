@@ -17,71 +17,50 @@ void print_tensor(Tensor *tensor, const char *name) {
 int main() 
 {
     // Input, shape: {2, 4}
-    float input_data[] = {1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0};
-    int input_shape[] = {2, 4};
-    Tensor *input = tensor_from_array("input", input_data, input_shape, 2);
+    float x_data[] = {1.5, -2.3, 3.7, -4.1, 5.2, -6.8, 7.9, -8.4};
+    int x_shape[] = {2, 4};
+    Tensor *x = tensor_from_array("x", x_data, x_shape, 2);
 
     // First Dense layer, shape {4, 3}
     Layer *fc1 = dense_create("fc1", 4, 3);
     DenseParameters *fc1_params = (DenseParameters *)(fc1->params);
-    float w1[] = {0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2};
-    float b1[] = {0.5, 0.5, 0.5};
+    float w1[] = {0.4, -0.5, 0.6, -0.7, 0.8, -0.9, 1.0, -1.1, 1.2, -1.3, 1.4, -1.5};
+    float b1[] = {0.2, -0.3, 0.4};
     memcpy(fc1_params->weights->data, w1, sizeof(w1));
     memcpy(fc1_params->bias->data, b1, sizeof(b1));
 
     // Second Dense layer, shape {3, 2}
     Layer *fc2 = dense_create("fc2", 3, 2);
     DenseParameters *fc2_params = (DenseParameters *)(fc2->params);
-    float w2[] = {0.1, 0.2, 0.3, 0.4, 0.5, 0.6};
-    float b2[] = {0.1, 0.1};
+    float w2[] = {-0.1, 0.2, -0.3, 0.4, -0.5, 0.6};
+    float b2[] = {-0.1, 0.1};
     memcpy(fc2_params->weights->data, w2, sizeof(w2));
     memcpy(fc2_params->bias->data, b2, sizeof(b2));
 
-    // Third Dense layer, shape {2, 2}
-    Layer *fc3 = dense_create("fc3", 2, 2);
-    DenseParameters *fc3_params = (DenseParameters *)(fc3->params);
-    float w3[] = {0.1, 0.2, 0.3, 0.4};
-    float b3[] = {0.1, 0.1};
-    memcpy(fc3_params->weights->data, w3, sizeof(w3));
-    memcpy(fc3_params->bias->data, b3, sizeof(b3));
-
-    // Fourth Dense layer, shape {2, 1}
-    Layer *fc4 = dense_create("fc4", 2, 1);
-    DenseParameters *fc4_params = (DenseParameters *)(fc4->params);
-    float w4[] = {0.1, 0.2};
-    float b4[] = {0.1};
-    memcpy(fc4_params->weights->data, w4, sizeof(w4));
-    memcpy(fc4_params->bias->data, b4, sizeof(b4));
-
     // Create the model and add layers
-    Layer *layers[] = {fc1, fc2, fc3, fc4};
-    Model *model = model_create(layers, 4);
+    Layer *layers[] = {fc1, fc2};
+    Model *model = model_create(layers, 2);
 
     // Forward pass through all layers
-    Tensor *hidden1 = fc1->forward(fc1, input);
-    Tensor *hidden2 = fc2->forward(fc2, hidden1);
-    Tensor *hidden3 = fc3->forward(fc3, hidden2);
-    Tensor *output = fc4->forward(fc4, hidden3);
+    Tensor *x1 = fc1->forward(fc1, x);
+    Tensor *x2 = fc2->forward(fc2, x1);
+    Tensor *y = softmax_f(x2, 1);
 
     // Create an optimizer
     Optimizer *sgd = sgd_create(0.01);
 
     // Backward pass
-    for (int i = 0; i < output->size; i++) 
+    for (int i = 0; i < y->size; i++) 
     {
-        output->grad[i] = 1.0;
+        y->grad[i] = 1.0;
     }
-    output->backward(output, output->grad);
+    y->backward(y, y->grad);
 
     // Update params
     sgd->step(sgd, model->params, model->num_params);
 
     // Print tensors
-    print_tensor(output, "output");
-    print_tensor(fc4_params->weights, fc4_params->weights->name);
-    print_tensor(fc4_params->bias, fc4_params->bias->name);
-    print_tensor(fc3_params->weights, fc3_params->weights->name);
-    print_tensor(fc3_params->bias, fc3_params->bias->name);
+    print_tensor(y, "y");
     print_tensor(fc2_params->weights, fc2_params->weights->name);
     print_tensor(fc2_params->bias, fc2_params->bias->name);
     print_tensor(fc1_params->weights, fc1_params->weights->name);
@@ -91,7 +70,8 @@ int main()
     model_save(model, "model.bin");
 
     // Free memory
-    tensor_free(input);
+    tensor_free(x);
+    tensor_free(y);
     optimizer_free(sgd);
     model_free(model);
 

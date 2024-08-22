@@ -46,6 +46,50 @@ void tanh_backward(Tensor *self, float *grad)
     }
 }
 
+void leaky_relu_backward(Tensor *self, float *grad)
+{
+    Tensor *input = self->grad_a;
+    float alpha = self->ops_utils.working_scalar;
+    for (int i = 0; i < self->size; i++) 
+    {
+        input->grad[i] += input->data[i] > 0 ? grad[i] : alpha * grad[i];
+    }
+    if (input->backward) 
+    {
+        input->backward(input, input->grad);
+    }
+}
+
+void elu_backward(Tensor *self, float *grad)
+{
+    Tensor *input = self->grad_a;
+    float alpha = self->ops_utils.working_scalar;
+    for (int i = 0; i < self->size; i++) 
+    {
+        input->grad[i] += input->data[i] > 0 ? grad[i] : alpha * exp(input->data[i]) * grad[i];
+    }
+    if (input->backward) 
+    {
+        input->backward(input, input->grad);
+    }
+}
+
+void gelu_backward(Tensor *self, float *grad)
+{
+    Tensor *input = self->grad_a;
+    for (int i = 0; i < self->size; i++) 
+    {
+        float x = input->data[i];
+        float tanh_out = tanh(sqrt(2 / M_PI) * (x + 0.044715 * pow(x, 3)));
+        float gelu_grad = 0.5 * tanh_out + (0.5 * x * (1 - tanh_out * tanh_out) * (sqrt(2 / M_PI) * (1 + 3 * 0.044715 * pow(x, 2))));
+        input->grad[i] += gelu_grad * grad[i];
+    }
+    if (input->backward) 
+    {
+        input->backward(input, input->grad);
+    }
+}
+
 void softmax_backward(Tensor *self, float *grad) 
 {
     Tensor *input = self->grad_a;

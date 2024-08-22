@@ -39,6 +39,45 @@ Tensor* tanh_f(Tensor *input)
     return result;
 }
 
+Tensor* leaky_relu_f(Tensor *input, float alpha)
+{
+    Tensor *result = tensor_like(NULL, input);
+    for (int i = 0; i < input->size; i++) 
+    {
+        result->data[i] = input->data[i] > 0 ? input->data[i] : alpha * input->data[i];
+    }
+    result->ops_utils.working_scalar = alpha;
+    result->backward = &leaky_relu_backward;
+    result->grad_a = input;
+    return result;
+}
+
+Tensor* elu_f(Tensor *input, float alpha)
+{
+    Tensor *result = tensor_like(NULL, input);
+    for (int i = 0; i < input->size; i++) 
+    {
+        result->data[i] = input->data[i] > 0 ? input->data[i] : alpha * (exp(input->data[i]) - 1);
+    }
+    result->ops_utils.working_scalar = alpha;
+    result->backward = &elu_backward;
+    result->grad_a = input;
+    return result;
+}
+
+Tensor* gelu_f(Tensor *input)
+{
+    Tensor *result = tensor_like(NULL, input);
+    for (int i = 0; i < input->size; i++) 
+    {
+        float x = input->data[i];
+        result->data[i] = 0.5 * x * (1 + tanh(sqrt(2 / M_PI) * (x + 0.044715 * pow(x, 3))));
+    }
+    result->backward = &gelu_backward;
+    result->grad_a = input;
+    return result;
+}
+
 Tensor* softmax_f(Tensor *input, int axis) 
 {
     Tensor *result = tensor_like(NULL, input);
