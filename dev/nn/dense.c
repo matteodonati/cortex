@@ -3,7 +3,8 @@
 #include <string.h>
 #include <cortex.h>
 
-void print_tensor(Tensor *tensor, const char *name) {
+void print_tensor(Tensor *tensor, const char *name) 
+{
     printf("Tensor %s:\n", name);
     printf("shape:\n");
     print_tensor_shape(tensor);
