@@ -22,6 +22,11 @@ int main()
     int x_shape[] = {2, 4};
     Tensor *x = tensor_from_array("x", x_data, x_shape, 2);
 
+    // Labels (not one-hot encoded), shape: {2}
+    float y_data[] = {0, 1};
+    int y_shape[] = {2};
+    Tensor *y_true = tensor_from_array("y_true", y_data, y_shape, 1);
+
     // First Dense layer, shape {4, 3}
     Layer *fc1 = dense_create("fc1", 4, 3);
     DenseParameters *fc1_params = (DenseParameters *)(fc1->params);
@@ -47,21 +52,21 @@ int main()
     Tensor *x2 = fc2->forward(fc2, x1);
     Tensor *y = softmax_f(x2, 1);
 
+    // Calculate loss
+    Tensor *loss = cross_entropy_loss(y_true, y);
+
     // Create an optimizer
     Optimizer *sgd = sgd_create(0.01);
 
     // Backward pass
-    for (int i = 0; i < y->size; i++) 
-    {
-        y->grad[i] = 1.0;
-    }
-    y->backward(y, y->grad);
+    loss->backward(loss, loss->grad);
 
     // Update params
     sgd->step(sgd, model->params, model->num_params);
 
     // Print tensors
-    print_tensor(y, "y");
+    print_tensor(y, "y_pred");
+    print_tensor(loss, "loss");
     print_tensor(fc2_params->weights, fc2_params->weights->name);
     print_tensor(fc2_params->bias, fc2_params->bias->name);
     print_tensor(fc1_params->weights, fc1_params->weights->name);
@@ -72,7 +77,9 @@ int main()
 
     // Free memory
     tensor_free(x);
+    tensor_free(y_true);
     tensor_free(y);
+    tensor_free(loss);
     optimizer_free(sgd);
     model_free(model);
 

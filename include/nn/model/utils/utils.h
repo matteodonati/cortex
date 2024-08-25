@@ -1,5 +1,5 @@
-#ifndef MODEL_UTILS_H
-#define MODEL_UTILS_H
+#ifndef NN_MODEL_UTILS_H
+#define NN_MODEL_UTILS_H
 
 #include "nn/model/model.h"
 

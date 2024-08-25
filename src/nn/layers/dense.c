@@ -27,33 +27,45 @@ Layer* dense_create(const char *name, int input_dim, int output_dim)
     return (Layer *)dense;
 }
 
-Tensor* dense_forward(Layer *self, Tensor *input) 
+Tensor* dense_forward(Layer *self, Tensor *x) 
 {
     // Get trainable params
     DenseParameters *params = (DenseParameters *)self->params;
 
-    // Store the input tensor
-    self->input = input;
+    if (x->ndim != 2) 
+    {
+        fprintf(stderr, "Error: Input tensor must be 2-dimensional in dense_forward.\n");
+        exit(EXIT_FAILURE);
+    }
+    
+    if (x->shape[1] != params->weights->shape[1]) 
+    {
+        fprintf(stderr, "Error: Input tensor has incompatible shape in dense_forward.\n");
+        fprintf(stderr, "Expected %d columns, but got %d columns.\n", params->weights->shape[1], x->shape[1]);
+        exit(EXIT_FAILURE);
+    }
 
     // Forward pass
-    Tensor *transposed_weights = tensor_transpose(params->weights, (int[]){1, 0});
-    Tensor *z = tensor_matmul(input, transposed_weights);
-    Tensor *output = tensor_add(z, params->bias);
+    Tensor *weights_T = tensor_transpose(params->weights, (int[]){1, 0});
+    Tensor *z = tensor_matmul(x, weights_T);
+    Tensor *y = tensor_add(z, params->bias);
 
-    // Store the created tensors in the tensors list
-    self->tensors = (Tensor **)malloc(3 * sizeof(Tensor *));
-    self->tensor_count = 0;
-    self->tensors[self->tensor_count++] = transposed_weights;
-    self->tensors[self->tensor_count++] = z;
-    self->tensors[self->tensor_count++] = output;
+    // Pointers
+    self->input = x;
+    self->tensor_count = 3;
+    self->tensors = (Tensor **)malloc(self->tensor_count * sizeof(Tensor *));
+    self->tensors[0] = weights_T;
+    self->tensors[1] = z;
+    self->tensors[2] = y;
+    self->output = y;
 
-    // Store the output tensor
-    self->output = output;
-
-    return output;
+    return y;
 }
 
 void dense_free(Layer *self) 
 {
-    free((Dense *)self);
+    if (self)
+    {
+        free((Dense *)self);
+    }
 }
