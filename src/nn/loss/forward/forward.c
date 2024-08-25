@@ -40,11 +40,10 @@ Tensor* cross_entropy_loss(Tensor *y_true, Tensor *y_pred)
     // One-hot encode
     int num_classes = y_pred->shape[y_pred->ndim - 1];
     Tensor *y_true_one_hot = one_hot_encode(y_true, num_classes);
-    
+
     Tensor *loss = tensor_zeros("cross_entropy_loss", (int[]){1}, 1);
     for (int i = 0; i < y_true_one_hot->size; i++) 
     {
-        printf("loss->data[0] = %f - %f * %f\n", loss->data[0], y_true_one_hot->data[i], logf(y_pred->data[i]));
         loss->data[0] -= y_true_one_hot->data[i] * logf(y_pred->data[i]);
     }
     tensor_free(y_true_one_hot);
