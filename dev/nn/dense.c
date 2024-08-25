@@ -22,10 +22,10 @@ int main()
     int x_shape[] = {2, 4};
     Tensor *x = tensor_from_array("x", x_data, x_shape, 2);
 
-    // Labels (not one-hot encoded), shape: {2}
-    float y_data[] = {0, 1};
-    int y_shape[] = {2};
-    Tensor *y_true = tensor_from_array("y_true", y_data, y_shape, 1);
+    // Labels (continuous values for regression), shape: {2, 2}
+    float y_data[] = {0.5, 1.5, 2.5, 3.5};
+    int y_shape[] = {2, 2};
+    Tensor *y_true = tensor_from_array("y_true", y_data, y_shape, 2);
 
     // First Dense layer, shape {4, 3}
     Layer *fc1 = dense_create("fc1", 4, 3);
@@ -49,11 +49,10 @@ int main()
 
     // Forward pass through all layers
     Tensor *x1 = fc1->forward(fc1, x);
-    Tensor *x2 = fc2->forward(fc2, x1);
-    Tensor *y = softmax_f(x2, 1);
+    Tensor *y_pred = fc2->forward(fc2, x1);
 
-    // Calculate loss
-    Tensor *loss = cross_entropy_loss(y_true, y);
+    // Calculate loss using Mean Squared Error (MSE)
+    Tensor *loss = mse_loss(y_true, y_pred);
 
     // Create an optimizer
     Optimizer *sgd = sgd_create(0.01);
@@ -61,11 +60,11 @@ int main()
     // Backward pass
     loss->backward(loss, loss->grad);
 
-    // Update params
+    // Update parameters
     sgd->step(sgd, model->params, model->num_params);
 
     // Print tensors
-    print_tensor(y, "y_pred");
+    print_tensor(y_pred, "y_pred");
     print_tensor(loss, "loss");
     print_tensor(fc2_params->weights, fc2_params->weights->name);
     print_tensor(fc2_params->bias, fc2_params->bias->name);
@@ -78,7 +77,6 @@ int main()
     // Free memory
     tensor_free(x);
     tensor_free(y_true);
-    tensor_free(y);
     tensor_free(loss);
     optimizer_free(sgd);
     model_free(model);

@@ -13,7 +13,6 @@ void mse_loss_backward(Tensor *loss, float *grad)
     {
         float diff = y_pred->data[i] - y_true->data[i];
         y_pred->grad[i] += (2.0 / y_pred->size) * diff * grad[0];
-        y_pred->grad[i] /= batch_size;
     }
 
     if (y_pred->backward) 
