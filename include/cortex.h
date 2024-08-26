@@ -1,6 +1,7 @@
 #ifndef CORTEX_H
 #define CORTEX_H
 
+#include "utils/progress/progress.h"
 #include "tensor/tensor.h"
 #include "tensor/utils/utils.h"
 #include "ops/forward/forward.h"
