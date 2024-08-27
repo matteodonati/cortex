@@ -37,9 +37,9 @@ int main()
     generate_sine_data(x_data, y_data, num_samples);
 
     // Layers
-    Layer *fc1 = dense_create("fc1", 1, 256);
-    Layer *fc2 = dense_create("fc2", 256, 100);
-    Layer *fc3 = dense_create("fc3", 100, 1);
+    Layer *fc1 = dense_create("fc1", 1, 128);
+    Layer *fc2 = dense_create("fc2", 128, 64);
+    Layer *fc3 = dense_create("fc3", 64, 1);
 
     // Model
     int num_layers = 3;
@@ -47,13 +47,13 @@ int main()
     Model *model = model_create(layers, num_layers);
 
     // Optimizer
-    Optimizer *sgd = sgd_create(0.01);
+    Optimizer *sgd = sgd_create(0.0001);
 
     // Measure training time
     clock_t start_time = clock();
 
     // Train
-    int num_epochs = 2;
+    int num_epochs = 1000;
     for (int epoch = 0; epoch < num_epochs; epoch++) 
     {
         float epoch_loss = 0.0f;
@@ -74,14 +74,6 @@ int main()
             Tensor *x2 = relu_f(fc2->forward(fc2, x1));
             Tensor *y_pred = fc3->forward(fc3, x2);
 
-            // Print tensors
-            Tensor *fc1_weights = fc1->params->get_params(fc1->params)[0];
-            Tensor *fc2_weights = fc2->params->get_params(fc2->params)[0];
-            Tensor *fc3_weights = fc3->params->get_params(fc3->params)[0];
-            print_tensor(fc1_weights, "fc1_weights");
-            print_tensor(fc2_weights, "fc2_weights");
-            print_tensor(fc3_weights, "fc3_weights");
-
             // Calculate the loss using MSE
             Tensor *loss = mse_loss(y_batch, y_pred);
 
@@ -97,7 +89,7 @@ int main()
             // Reset gradients
             model_zero_grad(model);
 
-            // Free layers' tensors and activations
+            // Free layers' tensors
             for (int i = 0; i < num_layers; i++) 
             {
                 for (int j = 0; j < layers[i]->tensor_count; j++) 
@@ -107,11 +99,13 @@ int main()
                 free(layers[i]->tensors);
             }
 
-            // Free tensors
-            tensor_free(x_batch);
-            tensor_free(y_batch);
+            // Free activation tensors
             tensor_free(x1);
             tensor_free(x2);
+
+            // Free other tensors
+            tensor_free(x_batch);
+            tensor_free(y_batch);
             tensor_free(loss);
         }
 

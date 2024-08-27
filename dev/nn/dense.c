@@ -44,8 +44,9 @@ int main()
     memcpy(fc2_params->bias->data, b2, sizeof(b2));
 
     // Create the model and add layers
+    int num_layers = 2;
     Layer *layers[] = {fc1, fc2};
-    Model *model = model_create(layers, 2);
+    Model *model = model_create(layers, num_layers);
 
     // Forward pass through all layers
     Tensor *x1 = fc1->forward(fc1, x);
@@ -76,6 +77,14 @@ int main()
     print_tensor(fc1_params->bias, fc1_params->bias->name);
 
     // Free memory
+    for (int i = 0; i < num_layers; i++) 
+    {
+        for (int j = 0; j < layers[i]->tensor_count; j++) 
+        {
+            tensor_free(layers[i]->tensors[j]);
+        }
+        free(layers[i]->tensors);
+    }
     tensor_free(x);
     tensor_free(y_true);
     optimizer_free(sgd);
