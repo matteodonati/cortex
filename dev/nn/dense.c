@@ -75,9 +75,6 @@ int main()
     print_tensor(fc1_params->weights, fc1_params->weights->name);
     print_tensor(fc1_params->bias, fc1_params->bias->name);
 
-    // Save the model
-    model_save(model, "model.bin");
-
     // Free memory
     tensor_free(x);
     tensor_free(y_true);

@@ -21,21 +21,21 @@ int main()
     float data[] = {1.0, -2.0, 3.0, -4.0, 5.0, -6.0};
     Tensor *input = tensor_from_array("input", data, shape, 2);
 
-    // Apply ReLU activation
+    // Apply relu activation
     Tensor *relu_output = relu_f(input);
-    print_tensor(relu_output, "ReLU Output");
+    print_tensor(relu_output, "ReLU output");
 
-    // Apply Sigmoid activation
+    // Apply sigmoid activation
     Tensor *sigmoid_output = sigmoid_f(input);
-    print_tensor(sigmoid_output, "Sigmoid Output");
+    print_tensor(sigmoid_output, "Sigmoid output");
 
-    // Apply Tanh activation
+    // Apply tanh activation
     Tensor *tanh_output = tanh_f(input);
-    print_tensor(tanh_output, "Tanh Output");
+    print_tensor(tanh_output, "Tanh output");
 
-    // Apply Softmax activation
+    // Apply softmax activation
     Tensor *softmax_output = softmax_f(input, 0);
-    print_tensor(softmax_output, "Softmax Output");
+    print_tensor(softmax_output, "Softmax output");
 
     // Backward pass
     for (int i = 0; i < relu_output->size; i++) 
@@ -55,21 +55,21 @@ int main()
         softmax_output->grad[i] = 1.0;
     }
 
-    // Perform backward pass for ReLU
+    // Perform backward pass for relu
     tensor_backward(relu_output);
-    print_tensor(input, "ReLU Backward Input");
+    print_tensor(input, "ReLU backward");
 
-    // Perform backward pass for Sigmoid
+    // Perform backward pass for sigmoid
     tensor_backward(sigmoid_output);
-    print_tensor(input, "Sigmoid Backward Input");
+    print_tensor(input, "Sigmoid backward");
 
-    // Perform backward pass for Tanh
+    // Perform backward pass for tanh
     tensor_backward(tanh_output);
-    print_tensor(input, "Tanh Backward Input");
+    print_tensor(input, "Tanh backward");
 
-    // Perform backward pass for Softmax
+    // Perform backward pass for softmax
     tensor_backward(softmax_output);
-    print_tensor(input, "Softmax Backward Input");
+    print_tensor(input, "Softmax backward");
 
     // Free memory
     tensor_free(input);

@@ -26,7 +26,7 @@ sudo make install
 rm -f "$BIN_DIR/$PROGRAM_NAME"
 
 # Compile the program and place the binary in the specified directory
-gcc -o "$BIN_DIR/$PROGRAM_NAME" "$PROGRAM_SRC" -lcortex -L/usr/local/lib -I/usr/local/include/cortex
+gcc -o "$BIN_DIR/$PROGRAM_NAME" "$PROGRAM_SRC" -lcortex -L/usr/local/lib -I/usr/local/include/cortex -lm
 
 # Run the program
 if [ $? -eq 0 ]; then

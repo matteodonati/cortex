@@ -36,7 +36,7 @@ $(LIBDIR):
 # Compile source files into object files
 $(OBJDIR)/%.o: $(SRCDIR)/%.c | $(OBJDIR)
 	@mkdir -p $(dir $@)
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@ -lm
 
 # Create the shared library
 $(SHARED_LIB): $(OBJ) | $(LIBDIR)
