@@ -12,6 +12,7 @@ typedef struct Model
 } Model;
 
 Model* model_create(Layer **layers, int num_layers);
+void model_zero_grad(Model *model);
 void model_free(Model *model);
 
 #endif

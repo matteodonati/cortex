@@ -57,15 +57,19 @@ int main()
     // Create an optimizer
     Optimizer *sgd = sgd_create(0.01);
 
-    // Backward pass
+    // Backward pass and tensor free
     tensor_backward(loss);
+    print_tensor(loss, "loss");
+    tensor_free(loss);
 
     // Update parameters
     optimizer_step(sgd, model->params, model->num_params);
 
+    // Reset gradients
+    model_zero_grad(model);
+
     // Print tensors
     print_tensor(y_pred, "y_pred");
-    print_tensor(loss, "loss");
     print_tensor(fc2_params->weights, fc2_params->weights->name);
     print_tensor(fc2_params->bias, fc2_params->bias->name);
     print_tensor(fc1_params->weights, fc1_params->weights->name);
@@ -77,7 +81,6 @@ int main()
     // Free memory
     tensor_free(x);
     tensor_free(y_true);
-    tensor_free(loss);
     optimizer_free(sgd);
     model_free(model);
 

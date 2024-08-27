@@ -30,6 +30,23 @@ Model* model_create(Layer **layers, int num_layers)
     return model;
 }
 
+void model_zero_grad(Model *model)
+{
+    if (model == NULL || model->params == NULL) 
+    {
+        return;
+    }
+
+    for (int i = 0; i < model->num_params; i++) 
+    {
+        Tensor *param = model->params[i];
+        if (param->grad) 
+        {
+            memset(param->grad, 0, param->size * sizeof(float));
+        }
+    }
+}
+
 void model_free(Model *model)
 {
     if (model) 
