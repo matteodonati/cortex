@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "tensor/utils/utils.h"
+#include "ops/utils/utils.h"
 #include "ops/forward/forward.h"
 #include "ops/backward/backward.h"
 

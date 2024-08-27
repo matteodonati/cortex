@@ -13,6 +13,7 @@ typedef struct Optimizer
     void (*free)(struct Optimizer *self);
 } Optimizer;
 
+void optimizer_step(Optimizer *optim, Tensor **params, int num_params);
 void optimizer_free(Optimizer *optimizer);
 
 #endif

@@ -19,7 +19,7 @@ typedef struct Tensor
     int size;
     int frozen;
     TensorOpsUtils ops_utils;
-    void (*backward)(struct Tensor *self, float *grad);
+    void (*backward)(struct Tensor *self);
     struct Tensor *grad_a;
     struct Tensor *grad_b;
 } Tensor;

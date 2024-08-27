@@ -97,24 +97,24 @@ void tensor_ops()
     }
 
     // Perform backward passes
-    neg->backward(neg, neg->grad);
-    abs->backward(abs, abs->grad);
-    sqrt->backward(sqrt, sqrt->grad);
-    exp->backward(exp, exp->grad);
-    log->backward(log, log->grad);
+    tensor_backward(neg);
+    tensor_backward(abs);
+    tensor_backward(sqrt);
+    tensor_backward(exp);
+    tensor_backward(log);
 
-    add->backward(add, add->grad);
-    sub->backward(sub, sub->grad);
-    mul->backward(mul, mul->grad);
-    div->backward(div, div->grad);
+    tensor_backward(add);
+    tensor_backward(sub);
+    tensor_backward(mul);
+    tensor_backward(div);
 
-    reshaped->backward(reshaped, reshaped->grad);
-    transposed->backward(transposed, transposed->grad);
-    max_result->backward(max_result, max_result->grad);
-    min_result->backward(min_result, min_result->grad);
-    sum_result->backward(sum_result, sum_result->grad);
-    mean_result->backward(mean_result, mean_result->grad);
-    cat_result->backward(cat_result, cat_result->grad);
+    tensor_backward(reshaped);
+    tensor_backward(transposed);
+    tensor_backward(max_result);
+    tensor_backward(min_result);
+    tensor_backward(sum_result);
+    tensor_backward(mean_result);
+    tensor_backward(cat_result);
 
     // Print all the results
     print_tensor(a, "a");
@@ -181,7 +181,7 @@ void tensor_matmul_op()
     }
 
     // Perform backward pass
-    matmul->backward(matmul, matmul->grad);
+    tensor_backward(matmul);
 
     // Print the results
     print_tensor(a, "a");

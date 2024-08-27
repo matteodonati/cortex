@@ -3,7 +3,7 @@
 
 #include "tensor/tensor.h"
 
-void mse_loss_backward(Tensor *loss, float *grad);
-void cross_entropy_loss_backward(Tensor *loss, float *grad);
+void mse_loss_backward(Tensor *loss);
+void cross_entropy_loss_backward(Tensor *loss);
 
 #endif

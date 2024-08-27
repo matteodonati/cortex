@@ -58,10 +58,10 @@ int main()
     Optimizer *sgd = sgd_create(0.01);
 
     // Backward pass
-    loss->backward(loss, loss->grad);
+    tensor_backward(loss);
 
     // Update parameters
-    sgd->step(sgd, model->params, model->num_params);
+    optimizer_step(sgd, model->params, model->num_params);
 
     // Print tensors
     print_tensor(y_pred, "y_pred");
