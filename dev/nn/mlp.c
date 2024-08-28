@@ -37,9 +37,9 @@ int main()
     generate_sine_data(x_data, y_data, num_samples);
 
     // Layers
-    Layer *fc1 = dense_create("fc1", 1, 128);
-    Layer *fc2 = dense_create("fc2", 128, 64);
-    Layer *fc3 = dense_create("fc3", 64, 1);
+    Layer *fc1 = dense_create("fc1", 1, 256);
+    Layer *fc2 = dense_create("fc2", 256, 128);
+    Layer *fc3 = dense_create("fc3", 128, 1);
 
     // Model
     int num_layers = 3;
@@ -47,20 +47,20 @@ int main()
     Model *model = model_create(layers, num_layers);
 
     // Optimizer
-    Optimizer *sgd = sgd_create(0.0001);
+    Optimizer *sgd = sgd_create(0.01);
 
     // Measure training time
     clock_t start_time = clock();
 
     // Train
-    int num_epochs = 1000;
+    int num_epochs = 100;
     for (int epoch = 0; epoch < num_epochs; epoch++) 
     {
         float epoch_loss = 0.0f;
 
-        int batch = 0;
+        int batch;
 
-        progress(batch, 0, num_batches)
+        progress(batch, num_batches)
         {
             // Prepare the mini-batch
             int x_shape[] = {batch_size, 1};

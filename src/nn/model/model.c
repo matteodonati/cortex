@@ -55,8 +55,6 @@ void model_free(Model *model)
         {
             layer_free(model->layers[i]);
         }
-        // Free model->layers only in case Layer **layers is created with malloc (i.e., it is not on the stack).
-        // free(model->layers);
         free(model->params);
         free(model);
     }

@@ -6,14 +6,15 @@
 Parameters* dense_parameters_create(const char *name, int input_dim, int output_dim) 
 {
     DenseParameters *params = (DenseParameters *)malloc(sizeof(DenseParameters));
+    float k = (1 / input_dim);
     
     char weights_name[256];
     snprintf(weights_name, sizeof(weights_name), "%s.weight", name);
-    params->weights = tensor_rand(weights_name, (int[]){output_dim, input_dim}, 2);
+    params->weights = tensor_rand(weights_name, (int[]){output_dim, input_dim}, 2, k);
     
     char bias_name[256];
     snprintf(bias_name, sizeof(bias_name), "%s.bias", name);
-    params->bias = tensor_zeros(bias_name, (int[]){output_dim}, 1);
+    params->bias = tensor_rand(bias_name, (int[]){output_dim}, 1, k);
 
     params->base.get_params = &dense_get_params;
     params->base.num_params = 2;

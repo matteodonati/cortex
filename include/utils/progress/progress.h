@@ -12,11 +12,11 @@ typedef struct
     int current;
 } ProgressBar;
 
-#define progress(i, start, end) \
+#define progress(i, end) \
     ProgressBar pb; \
-    pb.total = (end) - (start); \
+    pb.total = (end); \
     pb.current = 0; \
-    for (i = (start); i < (end); i++, progress_bar_update(&pb, i - (start) + 1))
+    for (i = 0; i < (end); i++, progress_bar_update(&pb, i + 1))
 
 void progress_bar_update(ProgressBar *pb, int value);
 

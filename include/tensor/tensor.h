@@ -26,7 +26,7 @@ typedef struct Tensor
 
 Tensor* initialize_tensor(const char *name, int *shape, int ndim);
 Tensor* tensor_from_array(const char *name, float *array, int *shape, int ndim);
-Tensor* tensor_rand(const char *name, int *shape, int ndim);
+Tensor* tensor_rand(const char *name, int *shape, int ndim, float k);
 Tensor* tensor_zeros(const char *name, int *shape, int ndim);
 Tensor* tensor_ones(const char *name, int *shape, int ndim);
 Tensor* tensor_full(const char *name, int *shape, int ndim, float value);
