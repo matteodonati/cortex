@@ -49,7 +49,7 @@ void adjust_indices_for_broadcasting(Tensor *a, Tensor *b, int *a_index, int *b_
     }
 }
 
-void tensor_backward(Tensor *tensor)
+void backward(Tensor *tensor)
 {
     if (tensor->backward)
     {

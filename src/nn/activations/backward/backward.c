@@ -11,7 +11,7 @@ void relu_backward(Tensor *self)
         tensor->grad[i] += tensor->data[i] > 0 ? self->grad[i] : 0;
     }
 
-    tensor_backward(tensor);
+    backward(tensor);
 }
 
 void sigmoid_backward(Tensor *self) 
@@ -23,7 +23,7 @@ void sigmoid_backward(Tensor *self)
         tensor->grad[i] += self->grad[i] * sigmoid_val * (1.0 - sigmoid_val);
     }
 
-    tensor_backward(tensor);
+    backward(tensor);
 }
 
 void tanh_backward(Tensor *self) 
@@ -35,29 +35,29 @@ void tanh_backward(Tensor *self)
         tensor->grad[i] += self->grad[i] * (1.0 - tanh_val * tanh_val);
     }
 
-    tensor_backward(tensor);
+    backward(tensor);
 }
 
 void leaky_relu_backward(Tensor *self)
 {
     Tensor *tensor = self->grad_a;
-    float alpha = self->ops_utils.working_scalar;
+    float alpha = self->ops_utils.cached_scalar;
     for (int i = 0; i < self->size; i++) 
     {
         tensor->grad[i] += tensor->data[i] > 0 ? self->grad[i] : alpha * self->grad[i];
     }
-    tensor_backward(tensor);
+    backward(tensor);
 }
 
 void elu_backward(Tensor *self)
 {
     Tensor *tensor = self->grad_a;
-    float alpha = self->ops_utils.working_scalar;
+    float alpha = self->ops_utils.cached_scalar;
     for (int i = 0; i < self->size; i++) 
     {
         tensor->grad[i] += tensor->data[i] > 0 ? self->grad[i] : alpha * exp(tensor->data[i]) * self->grad[i];
     }
-    tensor_backward(tensor);
+    backward(tensor);
 }
 
 void gelu_backward(Tensor *self)
@@ -70,30 +70,32 @@ void gelu_backward(Tensor *self)
         float gelu_grad = 0.5 * tanh_out + (0.5 * x * (1 - tanh_out * tanh_out) * (sqrt(2 / M_PI) * (1 + 3 * 0.044715 * pow(x, 2))));
         tensor->grad[i] += gelu_grad * self->grad[i];
     }
-    tensor_backward(tensor);
+    backward(tensor);
 }
 
 void softmax_backward(Tensor *self) 
 {
-    Tensor *tensor = self->grad_a;
+    Tensor *input_tensor = self->grad_a;
+    int axis = self->ops_utils.cached_axis;
 
-     // Axis used in softmax_f
-    int axis = self->ops_utils.working_axis;
+    // Retrieve the cached softmax output from the forward pass
+    Tensor *softmax_output = input_tensor->ops_utils.cached_tensor;
 
-    Tensor *softmax_output = softmax_f(tensor, axis);
+    int outer_size = 1;
+    int inner_size = 1;
+    int axis_size = input_tensor->shape[axis];
 
-    int outer_size = 1, inner_size = 1;
+    // Calculate the outer and inner sizes for the loop structure
     for (int i = 0; i < axis; i++) 
     {
-        outer_size *= tensor->shape[i];
+        outer_size *= input_tensor->shape[i];
     }
-    for (int i = axis + 1; i < tensor->ndim; i++) 
+    for (int i = axis + 1; i < input_tensor->ndim; i++) 
     {
-        inner_size *= tensor->shape[i];
+        inner_size *= input_tensor->shape[i];
     }
 
-    int axis_size = tensor->shape[axis];
-
+    // Iterate over all elements in the tensor
     for (int outer = 0; outer < outer_size; outer++) 
     {
         for (int inner = 0; inner < inner_size; inner++) 
@@ -101,24 +103,29 @@ void softmax_backward(Tensor *self)
             for (int i = 0; i < axis_size; i++) 
             {
                 int idx_i = outer * axis_size * inner_size + i * inner_size + inner;
-                float sum = 0.0;
+                float sum = 0.0f;
+
+                // Compute the gradient for the current element
                 for (int j = 0; j < axis_size; j++) 
                 {
                     int idx_j = outer * axis_size * inner_size + j * inner_size + inner;
                     if (i == j) 
                     {
-                        sum += softmax_output->data[idx_i] * (1.0 - softmax_output->data[idx_j]) * self->grad[idx_j];
+                        // Diagonal elements of the Jacobian matrix
+                        sum += softmax_output->data[idx_i] * (1.0f - softmax_output->data[idx_j]) * self->grad[idx_j];
                     } 
                     else 
                     {
+                        // Off-diagonal elements of the Jacobian matrix
                         sum -= softmax_output->data[idx_i] * softmax_output->data[idx_j] * self->grad[idx_j];
                     }
                 }
-                tensor->grad[idx_i] += sum;
+
+                // Accumulate the computed gradient
+                input_tensor->grad[idx_i] += sum;
             }
         }
     }
 
-    tensor_backward(tensor);
-    tensor_free(softmax_output);
+    backward(input_tensor);
 }

@@ -72,7 +72,7 @@ Tensor* leaky_relu_f(Tensor *tensor, float alpha)
     {
         result->data[i] = tensor->data[i] > 0 ? tensor->data[i] : alpha * tensor->data[i];
     }
-    result->ops_utils.working_scalar = alpha;
+    result->ops_utils.cached_scalar = alpha;
     result->backward = &leaky_relu_backward;
     result->grad_a = tensor;
     return result;
@@ -91,7 +91,7 @@ Tensor* elu_f(Tensor *tensor, float alpha)
     {
         result->data[i] = tensor->data[i] > 0 ? tensor->data[i] : alpha * (exp(tensor->data[i]) - 1);
     }
-    result->ops_utils.working_scalar = alpha;
+    result->ops_utils.cached_scalar = alpha;
     result->backward = &elu_backward;
     result->grad_a = tensor;
     return result;
@@ -178,9 +178,10 @@ Tensor* softmax_f(Tensor *tensor, int axis)
         }
     }
 
-    result->ops_utils.working_axis = axis;
+    result->ops_utils.cached_axis = axis;
     result->backward = &softmax_backward;
     result->grad_a = tensor;
+    tensor->ops_utils.cached_tensor = result;
     
     return result;
 }

@@ -97,24 +97,24 @@ void tensor_ops()
     }
 
     // Perform backward passes
-    tensor_backward(neg);
-    tensor_backward(abs);
-    tensor_backward(sqrt);
-    tensor_backward(exp);
-    tensor_backward(log);
+    backward(neg);
+    backward(abs);
+    backward(sqrt);
+    backward(exp);
+    backward(log);
 
-    tensor_backward(add);
-    tensor_backward(sub);
-    tensor_backward(mul);
-    tensor_backward(div);
+    backward(add);
+    backward(sub);
+    backward(mul);
+    backward(div);
 
-    tensor_backward(reshaped);
-    tensor_backward(transposed);
-    tensor_backward(max_result);
-    tensor_backward(min_result);
-    tensor_backward(sum_result);
-    tensor_backward(mean_result);
-    tensor_backward(cat_result);
+    backward(reshaped);
+    backward(transposed);
+    backward(max_result);
+    backward(min_result);
+    backward(sum_result);
+    backward(mean_result);
+    backward(cat_result);
 
     // Print all the results
     print_tensor(a, "a");
@@ -181,7 +181,7 @@ void tensor_matmul_op()
     }
 
     // Perform backward pass
-    tensor_backward(matmul);
+    backward(matmul);
 
     // Print the results
     print_tensor(a, "a");

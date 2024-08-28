@@ -56,19 +56,19 @@ int main()
     }
 
     // Perform backward pass for relu
-    tensor_backward(relu_output);
+    backward(relu_output);
     print_tensor(input, "ReLU backward");
 
     // Perform backward pass for sigmoid
-    tensor_backward(sigmoid_output);
+    backward(sigmoid_output);
     print_tensor(input, "Sigmoid backward");
 
     // Perform backward pass for tanh
-    tensor_backward(tanh_output);
+    backward(tanh_output);
     print_tensor(input, "Tanh backward");
 
     // Perform backward pass for softmax
-    tensor_backward(softmax_output);
+    backward(softmax_output);
     print_tensor(input, "Softmax backward");
 
     // Free memory

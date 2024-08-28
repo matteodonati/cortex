@@ -1,6 +1,15 @@
 #include <stdlib.h>
 #include "nn/layers/layer.h"
 
+Tensor *forward(Layer *self, Tensor *x)
+{
+    if (self->forward)
+    {
+        return self->forward(self, x);
+    }
+    return NULL;
+}
+
 void layer_free(Layer *layer)
 {
     if (layer)

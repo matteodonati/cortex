@@ -1,8 +1,8 @@
 #include <math.h>
-#include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <cortex.h>
+#include <sys/time.h>
 
 void print_tensor(Tensor *tensor, const char *name) 
 {
@@ -49,8 +49,9 @@ int main()
     // Optimizer
     Optimizer *sgd = sgd_create(0.01);
 
-    // Measure training time
-    clock_t start_time = clock();
+    // Measure time
+    struct timeval start, end;
+    gettimeofday(&start, NULL);
 
     // Train
     int num_epochs = 100;
@@ -59,7 +60,6 @@ int main()
         float epoch_loss = 0.0f;
 
         int batch;
-
         progress(batch, num_batches)
         {
             // Prepare the mini-batch
@@ -70,18 +70,18 @@ int main()
             Tensor *y_batch = tensor_from_array("y_batch", &y_data[batch * batch_size], y_shape, 2);
 
             // Forward pass
-            Tensor *x1 = relu_f(fc1->forward(fc1, x_batch));
-            Tensor *x2 = relu_f(fc2->forward(fc2, x1));
-            Tensor *y_pred = fc3->forward(fc3, x2);
+            Tensor *x1 = relu_f(forward(fc1, x_batch));
+            Tensor *x2 = relu_f(forward(fc2, x1));
+            Tensor *y_pred = forward(fc3, x2);
 
             // Calculate the loss using MSE
             Tensor *loss = mse_loss(y_batch, y_pred);
 
             // Accumulate the loss
             epoch_loss += loss->data[0];
-
+            
             // Backward pass
-            tensor_backward(loss);
+            backward(loss);
 
             // Update parameters
             optimizer_step(sgd, model->params, model->num_params);
@@ -89,7 +89,7 @@ int main()
             // Reset gradients
             model_zero_grad(model);
 
-            // Free layers' tensors
+            // Free temporary tensors
             for (int i = 0; i < num_layers; i++) 
             {
                 for (int j = 0; j < layers[i]->tensor_count; j++) 
@@ -98,14 +98,10 @@ int main()
                 }
                 free(layers[i]->tensors);
             }
-
-            // Free activation tensors
-            tensor_free(x1);
-            tensor_free(x2);
-
-            // Free other tensors
             tensor_free(x_batch);
             tensor_free(y_batch);
+            tensor_free(x1);
+            tensor_free(x2);
             tensor_free(loss);
         }
 
@@ -113,8 +109,8 @@ int main()
         printf("Epoch %03d - loss: %f\n", epoch + 1, epoch_loss / num_batches);
     }
 
-    clock_t end_time = clock();
-    double training_time = (double)(end_time - start_time) / CLOCKS_PER_SEC;
+    gettimeofday(&end, NULL);
+    double training_time = (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec) / 1e6;
     printf("Training time: %f seconds\n", training_time);
 
     // Free memory

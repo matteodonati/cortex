@@ -59,7 +59,7 @@ int main()
     Optimizer *sgd = sgd_create(0.01);
 
     // Backward pass and tensor free
-    tensor_backward(loss);
+    backward(loss);
     print_tensor(loss, "loss");
     tensor_free(loss);
 

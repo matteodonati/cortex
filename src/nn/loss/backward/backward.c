@@ -14,7 +14,7 @@ void mse_loss_backward(Tensor *loss)
         y_pred->grad[i] += (2.0 / y_pred->size) * (y_pred->data[i] - y_true->data[i]) * loss->grad[0];
     }
 
-    tensor_backward(y_pred);
+    backward(y_pred);
 }
 
 void cross_entropy_loss_backward(Tensor *loss) 
@@ -32,5 +32,5 @@ void cross_entropy_loss_backward(Tensor *loss)
         y_pred->grad[idx] /= batch_size;
     }
 
-    tensor_backward(y_pred);
+    backward(y_pred);
 }

@@ -1,11 +1,14 @@
 #ifndef TENSOR_H
 #define TENSOR_H
 
+struct Tensor;
+
 typedef struct TensorOpsUtils
 {
-    int working_axis;
-    int *working_axes;
-    float working_scalar;
+    int cached_axis;
+    int *cached_axes;
+    float cached_scalar;
+    struct Tensor *cached_tensor;
 } TensorOpsUtils;
 
 typedef struct Tensor 
