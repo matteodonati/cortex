@@ -1,4 +1,3 @@
-#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 #include "tensor/tensor.h"
@@ -47,10 +46,9 @@ Tensor* tensor_from_array(const char *name, float *array, int *shape, int ndim)
     return tensor;
 }
 
-Tensor* tensor_rand(const char *name, int *shape, int ndim, float k) 
+Tensor* tensor_rand(const char *name, int *shape, int ndim, float limit) 
 {
     Tensor *tensor = initialize_tensor(name, shape, ndim);
-    float limit = sqrtf(k);
     for (int i = 0; i < tensor->size; i++) 
     {
         tensor->data[i] = 2.0f * limit * ((float)rand() / RAND_MAX) - limit;

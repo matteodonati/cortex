@@ -1,3 +1,4 @@
+#include <math.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -6,15 +7,16 @@
 Parameters* dense_parameters_create(const char *name, int input_dim, int output_dim) 
 {
     DenseParameters *params = (DenseParameters *)malloc(sizeof(DenseParameters));
-    float k = (1 / input_dim);
+    
+    float limit = sqrtf(1.0f / input_dim);
     
     char weights_name[256];
     snprintf(weights_name, sizeof(weights_name), "%s.weight", name);
-    params->weights = tensor_rand(weights_name, (int[]){output_dim, input_dim}, 2, k);
+    params->weights = tensor_rand(weights_name, (int[]){output_dim, input_dim}, 2, limit);
     
     char bias_name[256];
     snprintf(bias_name, sizeof(bias_name), "%s.bias", name);
-    params->bias = tensor_rand(bias_name, (int[]){output_dim}, 1, k);
+    params->bias = tensor_rand(bias_name, (int[]){output_dim}, 1, limit);
 
     params->base.get_params = &dense_get_params;
     params->base.num_params = 2;

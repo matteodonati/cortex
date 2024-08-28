@@ -1,8 +1,8 @@
 #include <math.h>
+#include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <cortex.h>
-#include <sys/time.h>
 
 void print_tensor(Tensor *tensor, const char *name) 
 {
@@ -27,6 +27,8 @@ void generate_sine_data(float *x_data, float *y_data, int num_samples)
 
 int main() 
 {
+    srand(time(NULL));
+
     // Generate sine wave data
     int num_samples = 100;
     int batch_size = 10;
@@ -50,8 +52,7 @@ int main()
     Optimizer *sgd = sgd_create(0.01);
 
     // Measure time
-    struct timeval start, end;
-    gettimeofday(&start, NULL);
+    clock_t start_time = clock();
 
     // Train
     int num_epochs = 100;
@@ -73,6 +74,10 @@ int main()
             Tensor *x1 = relu_f(forward(fc1, x_batch));
             Tensor *x2 = relu_f(forward(fc2, x1));
             Tensor *y_pred = forward(fc3, x2);
+
+            // print_tensor(fc3->params->get_params(fc3->params)[0], "fc3.weight");
+            // print_tensor(y_pred, "y_pred");
+            // print_tensor(y_batch, "y_batch");
 
             // Calculate the loss using MSE
             Tensor *loss = mse_loss(y_batch, y_pred);
@@ -109,8 +114,8 @@ int main()
         printf("Epoch %03d - loss: %f\n", epoch + 1, epoch_loss / num_batches);
     }
 
-    gettimeofday(&end, NULL);
-    double training_time = (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec) / 1e6;
+    clock_t end_time = clock();
+    double training_time = (double)(end_time - start_time) / CLOCKS_PER_SEC;
     printf("Training time: %f seconds\n", training_time);
 
     // Free memory
