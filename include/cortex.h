@@ -19,5 +19,7 @@
 #include "nn/loss/backward/backward.h"
 #include "optim/optim.h"
 #include "optim/sgd.h"
+#include "data/dataset.h"
+#include "data/dataloader.h"
 
 #endif
