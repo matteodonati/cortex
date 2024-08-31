@@ -39,17 +39,22 @@ void regression()
 {
     // Generate sine wave data
     int num_samples = 100;
-    int batch_size = 10;
-    int num_batches = num_samples / batch_size;
+    int batch_size = 32;
 
     float *x_data = (float *)malloc(num_samples * sizeof(float));
     float *y_data = (float *)malloc(num_samples * sizeof(float));
     generate_regression_data(x_data, y_data, num_samples);
 
+    // Create Dataset and DataLoader
+    int x_shape[] = {1};  // Shape of a single input sample
+    int y_shape[] = {1};  // Shape of a single output sample
+    Dataset *dataset = dataset_create(x_data, y_data, num_samples, x_shape, 1, y_shape, 1);
+    DataLoader *dataloader = dataloader_create(dataset, batch_size, true);
+
     // Layers
-    Layer *fc1 = dense_create("fc1", 1, 256);
-    Layer *fc2 = dense_create("fc2", 256, 128);
-    Layer *fc3 = dense_create("fc3", 128, 1);
+    Layer *fc1 = dense_create("fc1", 1, 32);
+    Layer *fc2 = dense_create("fc2", 32, 16);
+    Layer *fc3 = dense_create("fc3", 16, 1);
 
     // Model
     int num_layers = 3;
@@ -67,16 +72,13 @@ void regression()
     for (int epoch = 0; epoch < num_epochs; epoch++) 
     {
         float epoch_loss = 0.0f;
-
+        
         int batch;
-        progress(batch, num_batches)
+        progress (batch, dataloader->num_batches)
         {
-            // Prepare the mini-batch
-            int x_shape[] = {batch_size, 1};
-            int y_shape[] = {batch_size, 1};
-
-            Tensor *x_batch = tensor_from_array("x_batch", &x_data[batch * batch_size], x_shape, 2);
-            Tensor *y_batch = tensor_from_array("y_batch", &y_data[batch * batch_size], y_shape, 2);
+            Tensor *x_batch;
+            Tensor *y_batch;
+            dataloader_get_batch(dataloader, &x_batch, &y_batch);
 
             // Forward pass
             Tensor *x1 = relu_f(forward(fc1, x_batch));
@@ -115,16 +117,18 @@ void regression()
         }
 
         // Print loss per epoch
-        printf("Epoch %03d - loss: %f\n", epoch + 1, epoch_loss / num_batches);
+        printf("Epoch %03d - loss: %f\n", epoch + 1, epoch_loss / dataloader->num_batches);
     }
 
     clock_t end_time = clock();
     double training_time = (double)(end_time - start_time) / CLOCKS_PER_SEC;
-    printf("Training time: %f seconds\n", training_time);
+    printf("\nTraining time: %f seconds\n", training_time);
 
     // Free memory
     optimizer_free(sgd);
     model_free(model);
+    dataloader_free(dataloader);
+    dataset_free(dataset);
     free(x_data);
     free(y_data);
 }
@@ -135,12 +139,17 @@ void classification()
     int num_samples = 100;
     int num_classes = 2;
     int input_dim = 2;
-    int batch_size = 10;
-    int num_batches = num_samples / batch_size;
+    int batch_size = 32;
 
     float *x_data = (float *)malloc(num_samples * input_dim * sizeof(float));
     float *y_data = (float *)malloc(num_samples * sizeof(float));
     generate_classification_data(x_data, y_data, num_samples, num_classes);
+
+    // Create Dataset and DataLoader
+    int x_shape[] = {input_dim};  // Shape of a single input sample
+    int y_shape[] = {1};          // Shape of a single output label
+    Dataset *dataset = dataset_create(x_data, y_data, num_samples, x_shape, 1, y_shape, 1);
+    DataLoader *dataloader = dataloader_create(dataset, batch_size, true);
 
     // Layers
     Layer *fc1 = dense_create("fc1", input_dim, 128);
@@ -165,14 +174,11 @@ void classification()
         float epoch_loss = 0.0f;
 
         int batch;
-        progress(batch, num_batches)
+        progress (batch, dataloader->num_batches)
         {
-            // Prepare the mini-batch
-            int x_shape[] = {batch_size, input_dim};
-            int y_shape[] = {batch_size};
-
-            Tensor *x_batch = tensor_from_array("x_batch", &x_data[batch * batch_size * input_dim], x_shape, 2);
-            Tensor *y_batch = tensor_from_array("y_batch", &y_data[batch * batch_size], y_shape, 1);
+            Tensor *x_batch;
+            Tensor *y_batch;
+            dataloader_get_batch(dataloader, &x_batch, &y_batch);
 
             // Forward pass
             Tensor *x1 = relu_f(forward(fc1, x_batch));
@@ -212,16 +218,18 @@ void classification()
         }
 
         // Print loss per epoch
-        printf("Epoch %03d - loss: %f\n", epoch + 1, epoch_loss / num_batches);
+        printf("Epoch %03d - loss: %f\n", epoch + 1, epoch_loss / dataloader->num_batches);
     }
 
     clock_t end_time = clock();
     double training_time = (double)(end_time - start_time) / CLOCKS_PER_SEC;
-    printf("Training time: %f seconds\n", training_time);
+    printf("\nTraining time: %f seconds\n", training_time);
 
     // Free memory
     optimizer_free(sgd);
     model_free(model);
+    dataloader_free(dataloader);
+    dataset_free(dataset);
     free(x_data);
     free(y_data);
 }
@@ -230,6 +238,6 @@ int main()
 {
     srand(time(NULL));
     regression();
-    classification();
+    // classification();
     return 0;
 }

@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 #include "data/dataset.h"
 
 Dataset* dataset_create(float *x, float *y, int num_samples, int *x_shape, int x_ndim, int *y_shape, int y_ndim) 

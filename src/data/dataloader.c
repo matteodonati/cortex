@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "data/dataloader.h"
+#include "tensor/utils/utils.h"
 
 DataLoader* dataloader_create(Dataset *dataset, int batch_size, bool shuffle) 
 {
@@ -26,7 +27,6 @@ DataLoader* dataloader_create(Dataset *dataset, int batch_size, bool shuffle)
 
 void dataloader_shuffle(DataLoader *loader) 
 {
-    srand(time(NULL));
     for (int i = loader->dataset->num_samples - 1; i > 0; i--) 
     {
         int j = rand() % (i + 1);
@@ -39,8 +39,6 @@ void dataloader_shuffle(DataLoader *loader)
 void dataloader_get_batch(DataLoader *loader, Tensor **xs, Tensor **ys) 
 {
     int start_idx = loader->current_batch * loader->batch_size;
-    int remaining_samples = loader->dataset->num_samples - start_idx;
-    int current_batch_size = remaining_samples < loader->batch_size ? remaining_samples : loader->batch_size;
 
     // Determine the total size of each sample in the batch
     int x_total_size = 1;
@@ -58,8 +56,8 @@ void dataloader_get_batch(DataLoader *loader, Tensor **xs, Tensor **ys)
     int *x_batch_shape = (int *)malloc((loader->dataset->x_ndim + 1) * sizeof(int));
     int *y_batch_shape = (int *)malloc((loader->dataset->y_ndim + 1) * sizeof(int));
 
-    x_batch_shape[0] = current_batch_size;
-    y_batch_shape[0] = current_batch_size;
+    x_batch_shape[0] = loader->batch_size;
+    y_batch_shape[0] = loader->batch_size;
     memcpy(x_batch_shape + 1, loader->dataset->x_shape, loader->dataset->x_ndim * sizeof(int));
     memcpy(y_batch_shape + 1, loader->dataset->y_shape, loader->dataset->y_ndim * sizeof(int));
 
@@ -70,7 +68,7 @@ void dataloader_get_batch(DataLoader *loader, Tensor **xs, Tensor **ys)
     free(y_batch_shape);
 
     // Fill the batch tensors with the data
-    for (int i = 0; i < current_batch_size; i++) 
+    for (int i = 0; i < loader->batch_size; i++) 
     {
         Tensor *x; 
         Tensor *y;
