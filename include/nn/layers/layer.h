@@ -19,7 +19,7 @@ typedef struct Layer
     void (*free)(struct Layer *self);
 } Layer;
 
-Tensor *forward(Layer *self, Tensor *x);
+Tensor *layer_forward(Layer *self, Tensor *x);
 void layer_free(Layer *layer);
 
 #endif

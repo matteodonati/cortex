@@ -62,7 +62,7 @@ void regression()
     Model *model = model_create(layers, num_layers);
 
     // Optimizer
-    Optimizer *sgd = sgd_create(0.01);
+    Optimizer *optim = adam_create(0.01f, 0.9f, 0.999f, 1e-8f);
 
     // Measure time
     clock_t start_time = clock();
@@ -81,9 +81,9 @@ void regression()
             dataloader_get_batch(dataloader, &x_batch, &y_batch);
 
             // Forward pass
-            Tensor *x1 = relu_f(forward(fc1, x_batch));
-            Tensor *x2 = relu_f(forward(fc2, x1));
-            Tensor *y_pred = forward(fc3, x2);
+            Tensor *x1 = relu_f(layer_forward(fc1, x_batch));
+            Tensor *x2 = relu_f(layer_forward(fc2, x1));
+            Tensor *y_pred = layer_forward(fc3, x2);
 
             // Calculate the loss using MSE
             Tensor *loss = mse_loss(y_batch, y_pred);
@@ -95,7 +95,7 @@ void regression()
             backward(loss);
 
             // Update parameters
-            optimizer_step(sgd, model->params, model->num_params);
+            optimizer_step(optim, model->params, model->num_params);
 
             // Reset gradients
             model_zero_grad(model);
@@ -125,7 +125,7 @@ void regression()
     printf("\nTraining time: %f seconds\n", training_time);
 
     // Free memory
-    optimizer_free(sgd);
+    optimizer_free(optim);
     model_free(model);
     dataloader_free(dataloader);
     dataset_free(dataset);
@@ -162,7 +162,7 @@ void classification()
     Model *model = model_create(layers, num_layers);
 
     // Optimizer
-    Optimizer *sgd = sgd_create(0.01);
+    Optimizer *optim = adam_create(0.01f, 0.9f, 0.999f, 1e-8f);
 
     // Measure time
     clock_t start_time = clock();
@@ -181,9 +181,9 @@ void classification()
             dataloader_get_batch(dataloader, &x_batch, &y_batch);
 
             // Forward pass
-            Tensor *x1 = relu_f(forward(fc1, x_batch));
-            Tensor *x2 = relu_f(forward(fc2, x1));
-            Tensor *y_pred = softmax_f(forward(fc3, x2), 1);
+            Tensor *x1 = relu_f(layer_forward(fc1, x_batch));
+            Tensor *x2 = relu_f(layer_forward(fc2, x1));
+            Tensor *y_pred = softmax_f(layer_forward(fc3, x2), 1);
 
             // Calculate the loss using cross-entropy
             Tensor *loss = cross_entropy_loss(y_batch, y_pred);
@@ -195,7 +195,7 @@ void classification()
             backward(loss);
 
             // Update parameters
-            optimizer_step(sgd, model->params, model->num_params);
+            optimizer_step(optim, model->params, model->num_params);
 
             // Reset gradients
             model_zero_grad(model);
@@ -226,7 +226,7 @@ void classification()
     printf("\nTraining time: %f seconds\n", training_time);
 
     // Free memory
-    optimizer_free(sgd);
+    optimizer_free(optim);
     model_free(model);
     dataloader_free(dataloader);
     dataset_free(dataset);
@@ -238,6 +238,6 @@ int main()
 {
     srand(time(NULL));
     regression();
-    // classification();
+    classification();
     return 0;
 }

@@ -1,6 +1,8 @@
 #ifndef TENSOR_H
 #define TENSOR_H
 
+#include <stdbool.h>
+
 struct Tensor;
 
 typedef struct TensorOpsUtils
@@ -20,7 +22,7 @@ typedef struct Tensor
     int *stride;
     int ndim;
     int size;
-    int frozen;
+    bool frozen;
     TensorOpsUtils ops_utils;
     void (*backward)(struct Tensor *self);
     struct Tensor *grad_a;

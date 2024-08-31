@@ -40,11 +40,11 @@ void dense_parameters_freeze(Parameters *base_params)
     DenseParameters *params = (DenseParameters *)base_params;
     if (params->weights) 
     {
-        params->weights->frozen = 1;
+        params->weights->frozen = true;
     }
     if (params->bias) 
     {
-        params->bias->frozen = 1;
+        params->bias->frozen = true;
     }
 }
 

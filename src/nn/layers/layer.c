@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include "nn/layers/layer.h"
 
-Tensor *forward(Layer *self, Tensor *x)
+Tensor *layer_forward(Layer *self, Tensor *x)
 {
     if (self->forward)
     {

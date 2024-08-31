@@ -15,7 +15,7 @@ Tensor* initialize_tensor(const char *name, int *shape, int ndim)
     tensor->shape = (int *)malloc(ndim * sizeof(int));
     tensor->stride = (int *)malloc(ndim * sizeof(int));
     tensor->ops_utils.cached_axes = (int *)malloc(ndim * sizeof(int));
-    tensor->frozen = 0;
+    tensor->frozen = false;
     tensor->backward = NULL;
     tensor->grad_a = NULL;
     tensor->grad_b = NULL;

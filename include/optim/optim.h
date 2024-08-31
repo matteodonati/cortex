@@ -4,6 +4,7 @@
 #include "tensor/tensor.h"
 
 #define OPTIM_TYPE_SGD 1
+#define OPTIM_TYPE_ADAM 2
 
 typedef struct Optimizer 
 {
