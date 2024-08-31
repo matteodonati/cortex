@@ -62,13 +62,13 @@ void regression()
     Model *model = model_create(layers, num_layers);
 
     // Optimizer
-    Optimizer *optim = adam_create(0.01f, 0.9f, 0.999f, 1e-8f);
+    Optimizer *optim = adamw_create(0.01f, 0.9f, 0.999f, 1e-8f, 0.01f);
 
     // Measure time
     clock_t start_time = clock();
 
     // Train
-    int num_epochs = 10;
+    int num_epochs = 100;
     for (int epoch = 0; epoch < num_epochs; epoch++) 
     {
         float epoch_loss = 0.0f;
@@ -162,13 +162,13 @@ void classification()
     Model *model = model_create(layers, num_layers);
 
     // Optimizer
-    Optimizer *optim = adam_create(0.01f, 0.9f, 0.999f, 1e-8f);
+    Optimizer *optim = adamw_create(0.01f, 0.9f, 0.999f, 1e-8f, 0.01f);
 
     // Measure time
     clock_t start_time = clock();
 
     // Train
-    int num_epochs = 10;
+    int num_epochs = 100;
     for (int epoch = 0; epoch < num_epochs; epoch++) 
     {
         float epoch_loss = 0.0f;

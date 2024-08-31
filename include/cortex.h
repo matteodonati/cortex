@@ -20,6 +20,7 @@
 #include "optim/optim.h"
 #include "optim/sgd.h"
 #include "optim/adam.h"
+#include "optim/adamw.h"
 #include "data/dataset.h"
 #include "data/dataloader.h"
 

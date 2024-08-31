@@ -5,6 +5,7 @@
 
 #define OPTIM_TYPE_SGD 1
 #define OPTIM_TYPE_ADAM 2
+#define OPTIM_TYPE_ADAMW 3
 
 typedef struct Optimizer 
 {
