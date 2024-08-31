@@ -15,8 +15,8 @@ typedef struct DataLoader
 } DataLoader;
 
 DataLoader* dataloader_create(Dataset *dataset, int batch_size, bool shuffle);
-void dataloader_free(DataLoader *loader);
 void dataloader_shuffle(DataLoader *loader);
 void dataloader_get_batch(DataLoader *loader, Tensor **batch_data, Tensor **batch_labels);
+void dataloader_free(DataLoader *loader);
 
 #endif

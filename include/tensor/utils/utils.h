@@ -5,6 +5,7 @@
 
 #define PRINT_LIMIT 3
 
+void tensor_set_slice(Tensor *dest, Tensor *src, int slice_index);
 void print_tensor_shape(Tensor *tensor);
 void print_tensor_array_recursive(float *array, int *shape, int ndim, int *indices, int level);
 void print_tensor_data(Tensor *tensor);

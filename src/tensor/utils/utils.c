@@ -3,6 +3,13 @@
 #include "tensor/tensor.h"
 #include "tensor/utils/utils.h"
 
+void tensor_set_slice(Tensor *dest, Tensor *src, int slice_index) 
+{
+    int slice_size = src->size;
+    int offset = slice_index * slice_size;
+    memcpy(&dest->data[offset], src->data, slice_size * sizeof(float));
+}
+
 void print_tensor_shape(Tensor *tensor)
 {
     printf("(");
