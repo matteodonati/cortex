@@ -3,18 +3,6 @@
 #include <string.h>
 #include <cortex.h>
 
-void print_tensor(Tensor *tensor, const char *name) 
-{
-    printf("Tensor %s:\n", name);
-    printf("shape:\n");
-    print_tensor_shape(tensor);
-    printf("data:\n");
-    print_tensor_data(tensor);
-    printf("grad:\n");
-    print_tensor_grad(tensor);
-    printf("\n");
-}
-
 int main() 
 {
     // Input, shape: {2, 4}
@@ -49,8 +37,8 @@ int main()
     Model *model = model_create(layers, num_layers);
 
     // Forward pass through all layers
-    Tensor *x1 = fc1->forward(fc1, x);
-    Tensor *y_pred = fc2->forward(fc2, x1);
+    Tensor *x1 = layer_forward(fc1, x);
+    Tensor *y_pred = layer_forward(fc2, x1);
 
     // Calculate loss using Mean Squared Error (MSE)
     Tensor *loss = mse_loss(y_true, y_pred);

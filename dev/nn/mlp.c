@@ -4,18 +4,6 @@
 #include <stdlib.h>
 #include <cortex.h>
 
-void print_tensor(Tensor *tensor, const char *name) 
-{
-    printf("Tensor %s:\n", name);
-    printf("shape:\n");
-    print_tensor_shape(tensor);
-    printf("data:\n");
-    print_tensor_data(tensor);
-    printf("grad:\n");
-    print_tensor_grad(tensor);
-    printf("\n");
-}
-
 void generate_regression_data(float *x_data, float *y_data, int num_samples) 
 {
     for (int i = 0; i < num_samples; i++) 

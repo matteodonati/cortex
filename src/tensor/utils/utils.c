@@ -108,3 +108,15 @@ void print_tensor_grad(Tensor *tensor)
     printf("\n");
     free(indices);
 }
+
+void print_tensor(Tensor *tensor, const char *name) 
+{
+    printf("Tensor %s:\n", name);
+    printf("shape:\n");
+    print_tensor_shape(tensor);
+    printf("data:\n");
+    print_tensor_data(tensor);
+    printf("grad:\n");
+    print_tensor_grad(tensor);
+    printf("\n");
+}

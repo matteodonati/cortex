@@ -5,6 +5,7 @@
 #include "optim/optim.h"
 
 #define LAYER_TYPE_DENSE 1
+#define LAYER_TYPE_CONV2D 2
 
 typedef struct Layer 
 {
