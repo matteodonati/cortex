@@ -7,10 +7,12 @@ struct Tensor;
 
 typedef struct TensorOpsUtils
 {
-    int cached_axis;
-    int *cached_axes;
-    float cached_scalar;
+    int cached_int;
+    int *cached_ints;
+    float cached_float;
+    float *cached_floats;
     struct Tensor *cached_tensor;
+    struct Tensor **cached_tensors;
 } TensorOpsUtils;
 
 typedef struct Tensor 

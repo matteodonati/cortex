@@ -137,7 +137,7 @@ void tensor_scalar_mul_backward(Tensor *self)
 
     for (int i = 0; i < tensor->size; i++) 
     {
-        tensor->grad[i] += self->grad[i] * tensor->ops_utils.cached_scalar;
+        tensor->grad[i] += self->grad[i] * tensor->ops_utils.cached_float;
     }
 
     backward(tensor);
@@ -210,10 +210,10 @@ void tensor_transpose_backward(Tensor *self)
     int ndim = self->ndim;
     int *reverse_axes = (int *)malloc(ndim * sizeof(int));
 
-    // Reverse the axes permutation stored in self->axes
+    // Reverse the axes permutation
     for (int i = 0; i < ndim; i++) 
     {
-        reverse_axes[self->ops_utils.cached_axes[i]] = i;
+        reverse_axes[self->ops_utils.cached_ints[i]] = i;
     }
 
     // Accumulate gradients for the original tensor based on the reverse transpose
@@ -248,7 +248,7 @@ void tensor_max_backward(Tensor *self)
 
         for (int d = tensor->ndim - 1, k = self->ndim - 1; d >= 0; d--) 
         {
-            if (d == self->ops_utils.cached_axis)
+            if (d == self->ops_utils.cached_int)
             {
                 continue;
             }
@@ -276,7 +276,7 @@ void tensor_min_backward(Tensor *self)
 
         for (int d = tensor->ndim - 1, k = self->ndim - 1; d >= 0; d--) 
         {
-            if (d == self->ops_utils.cached_axis)
+            if (d == self->ops_utils.cached_int)
             {
                 continue;
             }
@@ -304,7 +304,7 @@ void tensor_sum_backward(Tensor *self)
 
         for (int d = tensor->ndim - 1, k = self->ndim - 1; d >= 0; d--) 
         {
-            if (d == self->ops_utils.cached_axis) 
+            if (d == self->ops_utils.cached_int) 
             {
                 continue;
             }
@@ -323,7 +323,7 @@ void tensor_mean_backward(Tensor *self)
     Tensor *tensor = self->grad_a;
 
     // Calculate the divisor
-    int axis = self->ops_utils.cached_axis;
+    int axis = self->ops_utils.cached_int;
     int divisor = tensor->shape[axis];
 
     for (int i = 0; i < tensor->size; i++) 
@@ -369,7 +369,7 @@ void tensor_cat_backward(Tensor *self)
     }
 
     // Distribute the gradient to the second tensor
-    int axis = self->ops_utils.cached_axis;
+    int axis = self->ops_utils.cached_int;
     for (int i = 0; i < b->size; i++) 
     {
         int result_index = 0;

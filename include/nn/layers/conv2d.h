@@ -14,10 +14,11 @@ typedef struct Conv2D
     int stride[2];
     int padding[2];
     int groups;
-    int padding_mode;
 } Conv2D;
 
-Layer *conv2d_create(const char *name, int in_channels, int out_channels, int kernel_size[2], int stride[2], int padding[2], int groups, int padding_mode, int bias);
+Layer *conv2d_create(const char *name, int in_channels, int out_channels, int kernel_size[2], int stride[2], int padding[2], int groups);
+Tensor* im2col(Tensor *input, int kernel_height, int kernel_width, int stride_height, int stride_width, int pad_height, int pad_width);
+void col2im(Tensor *self);
 Tensor *conv2d_forward(Layer *self, Tensor *x);
 void conv2d_free(Layer *self);
 

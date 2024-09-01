@@ -41,7 +41,7 @@ void tanh_backward(Tensor *self)
 void leaky_relu_backward(Tensor *self)
 {
     Tensor *tensor = self->grad_a;
-    float alpha = self->ops_utils.cached_scalar;
+    float alpha = self->ops_utils.cached_float;
     for (int i = 0; i < self->size; i++) 
     {
         tensor->grad[i] += tensor->data[i] > 0 ? self->grad[i] : alpha * self->grad[i];
@@ -52,7 +52,7 @@ void leaky_relu_backward(Tensor *self)
 void elu_backward(Tensor *self)
 {
     Tensor *tensor = self->grad_a;
-    float alpha = self->ops_utils.cached_scalar;
+    float alpha = self->ops_utils.cached_float;
     for (int i = 0; i < self->size; i++) 
     {
         tensor->grad[i] += tensor->data[i] > 0 ? self->grad[i] : alpha * exp(tensor->data[i]) * self->grad[i];
@@ -76,7 +76,7 @@ void gelu_backward(Tensor *self)
 void softmax_backward(Tensor *self) 
 {
     Tensor *input_tensor = self->grad_a;
-    int axis = self->ops_utils.cached_axis;
+    int axis = self->ops_utils.cached_int;
 
     // Retrieve the cached softmax output from the forward pass
     Tensor *softmax_output = input_tensor->ops_utils.cached_tensor;

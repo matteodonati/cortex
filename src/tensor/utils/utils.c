@@ -11,112 +11,85 @@ void tensor_set_slice(Tensor *dest, Tensor *src, int slice_index)
     memcpy(&dest->data[offset], src->data, slice_size * sizeof(float));
 }
 
-void print_tensor_shape(Tensor *tensor)
+void print_tensor_array_recursive(float *data, int *shape, int ndim, int current_dim, int *indices) 
 {
-    printf("(");
-    for(int i = 0; i < tensor->ndim; i++) 
+    if (current_dim == ndim - 1) 
     {
-        printf("%d", tensor->shape[i]);
-        if(i < tensor->ndim - 1) 
-        {
-            printf(", ");
-        }
-    }
-    printf(")\n");
-}
-
-void print_tensor_array_recursive(float *array, int *shape, int ndim, int *indices, int level) 
-{
-    if (level == ndim - 1) 
-    {
-        // Print the innermost dimension
         printf("[");
-        for (int i = 0; i < shape[level]; i++) 
+        for (int i = 0; i < shape[current_dim]; i++) 
         {
-            if (i < PRINT_LIMIT || i >= shape[level] - PRINT_LIMIT) 
+            indices[current_dim] = i;
+            int flat_index = 0;
+            int stride = 1;
+            for (int j = ndim - 1; j >= 0; j--)
             {
-                printf("%f", array[indices[level]]);
-                if (i < shape[level] - 1) 
-                {
-                    printf(", ");
-                }
-            } 
-            else if (i == PRINT_LIMIT) 
-            {
-                printf("..., ");
+                flat_index += indices[j] * stride;
+                stride *= shape[j];
             }
-            indices[level]++;
+            printf("%.2e", data[flat_index]);  // Scientific notation with  digits after the decimal point
+            if (i < shape[current_dim] - 1) 
+            {
+                printf(", ");
+            }
         }
         printf("]");
     } 
     else 
     {
-        // Print outer dimensions
         printf("[");
-        int rows_to_print = (shape[level] <= 2 * PRINT_LIMIT) ? shape[level] : PRINT_LIMIT;
-
-        // Print the first part
-        for (int i = 0; i < rows_to_print; i++) 
+        for (int i = 0; i < shape[current_dim]; i++) 
         {
-            if (i > 0) 
+            indices[current_dim] = i;
+            print_tensor_array_recursive(data, shape, ndim, current_dim + 1, indices);
+            if (i < shape[current_dim] - 1) 
             {
-                printf("\n%*s", (level + 1), ""); // Indentation for nested levels
-            }
-            print_tensor_array_recursive(array, shape, ndim, indices, level + 1);
-        }
-
-        // Handle ellipsis if needed
-        if (shape[level] > 2 * PRINT_LIMIT) 
-        {
-            printf("\n%*s...", (level + 1), "");  // Indentation for ellipsis
-            for (int i = shape[level] - PRINT_LIMIT; i < shape[level]; i++) 
-            {
-                printf("\n%*s", (level + 1), "");  // Correct indentation for rows after ellipsis
-                print_tensor_array_recursive(array, shape, ndim, indices, level + 1);
+                printf(",\n");
+                for (int j = 0; j <= current_dim; j++) 
+                {
+                    printf(" ");
+                }
             }
         }
         printf("]");
     }
 }
 
-void print_tensor_data(Tensor *tensor) 
-{
-    int *indices = (int *)calloc(tensor->ndim, sizeof(int));
-    if (tensor->data)
-    {
-        print_tensor_array_recursive(tensor->data, tensor->shape, tensor->ndim, indices, 0);
-    }
-    else
-    {
-        printf("None");
-    }
-    printf("\n");
-    free(indices);
-}
-
-void print_tensor_grad(Tensor *tensor) 
-{
-    int *indices = (int *)calloc(tensor->ndim, sizeof(int));
-    if (tensor->grad)
-    {
-        print_tensor_array_recursive(tensor->grad, tensor->shape, tensor->ndim, indices, 0);
-    }
-    else
-    {
-        printf("None");
-    }
-    printf("\n");
-    free(indices);
-}
-
 void print_tensor(Tensor *tensor, const char *name) 
 {
-    printf("Tensor %s:\n", name);
-    printf("shape:\n");
-    print_tensor_shape(tensor);
+    printf("Tensor %s\n", name);
+    printf("shape: (");
+    for (int i = 0; i < tensor->ndim; i++) 
+    {
+        printf("%d", tensor->shape[i]);
+        if (i < tensor->ndim - 1) 
+        {
+            printf(", ");
+        }
+    }
+    printf(")\n");
+
+    int *indices = (int *)malloc(tensor->ndim * sizeof(int));
     printf("data:\n");
-    print_tensor_data(tensor);
-    printf("grad:\n");
-    print_tensor_grad(tensor);
+    if (tensor->data != NULL)
+    {
+        print_tensor_array_recursive(tensor->data, tensor->shape, tensor->ndim, 0, indices);
+    }
+    else
+    {
+        printf("None");
+    }
     printf("\n");
+
+    printf("grad:\n");
+    if (tensor->grad != NULL) 
+    {
+        print_tensor_array_recursive(tensor->grad, tensor->shape, tensor->ndim, 0, indices);
+    }
+    else
+    {
+        printf("None");
+    }
+    printf("\n");
+
+    free(indices);
 }

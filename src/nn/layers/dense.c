@@ -50,7 +50,7 @@ Tensor* dense_forward(Layer *self, Tensor *x)
     Tensor *z = tensor_matmul(x, weights_T);
     Tensor *y = tensor_add(z, params->bias);
 
-    // Pointers
+    // Pointers to intermediate results
     self->input = x;
     self->tensor_count = 3;
     self->tensors = (Tensor **)malloc(self->tensor_count * sizeof(Tensor *));

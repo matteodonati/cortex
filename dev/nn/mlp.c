@@ -226,6 +226,6 @@ int main()
 {
     srand(time(NULL));
     regression();
-    classification();
+    // classification();
     return 0;
 }
