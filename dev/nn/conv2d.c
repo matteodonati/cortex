@@ -45,7 +45,18 @@ int main()
     // Print output tensors
     print_tensor(y_pred, "y_pred");
 
+    // Backward pass (assuming some loss function with gradient 1.0 for simplicity)
+    Tensor *loss_grad = tensor_ones(NULL, y_pred->shape, y_pred->ndim); // Fake loss gradient with all ones
+    memcpy(y_pred->grad, loss_grad->data, loss_grad->size * sizeof(float));
+
+    backward(y_pred);
+
+    // Print gradients for input, weights, and bias
+    print_tensor(conv_params->weights, "conv1.weight");
+    print_tensor(conv_params->bias, "conv1.bias");
+
     // Free memory
+    tensor_free(loss_grad);
     for (int i = 0; i < num_layers; i++) 
     {
         for (int j = 0; j < layers[i]->tensor_count; j++) 
