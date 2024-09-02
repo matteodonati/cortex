@@ -171,39 +171,33 @@ Tensor* conv2d_forward(Layer *self, Tensor *x)
     int output_height = (input_height + 2 * pad_height - kernel_height) / stride_height + 1;
     int output_width = (input_width + 2 * pad_width - kernel_width) / stride_width + 1;
 
-    // im2col transformation of input tensor. Shape of input_col2 is {batch_size, output_height * output_width, kernel_height * kernel_width}
-    Tensor *input_col1 = im2col(x, kernel_height, kernel_width, stride_height, stride_width, pad_height, pad_width);
-    Tensor *input_col2 = tensor_transpose(input_col1, (int[]){0, 2, 1});
+    // im2col transformation of input tensor. Resulting shape: {batch_size, in_channels * kernel_height * kernel_width, output_height * output_width}
+    Tensor *input_col = im2col(x, kernel_height, kernel_width, stride_height, stride_width, pad_height, pad_width);
 
-    // Flatten and transpose kernel. Shape of kernel_T is {kernel_height * kernel_width, out_channels}
-    Tensor *kernel_flat = tensor_reshape(params->weights, (int[]){out_channels, in_channels * kernel_height * kernel_width}, 2);
-    Tensor *kernel_T = tensor_transpose(kernel_flat, (int[]){1, 0});
+    // Reshape kernel to 2D for matmul. Shape: {out_channels, in_channels * kernel_height * kernel_width}
+    Tensor *kernel_reshaped = tensor_reshape(params->weights, (int[]){out_channels, in_channels * kernel_height * kernel_width}, 2);
 
-    // Perform matrix multiplication between input_col2 and kernel_T and add bias. Shape is {batch_size, output_height * output_width, out_channels}
-    Tensor *output_flat = tensor_matmul(input_col2, kernel_T);
-    Tensor *output_flat_with_bias = tensor_add(output_flat, params->bias);
+    // Perform matrix multiplication. Shape: {batch_size, out_channels, output_height * output_width}
+    Tensor *output_flat = tensor_matmul(kernel_reshaped, input_col);
 
-    // Reshape the output to {batch_size, output_height, output_width, output_channels}
-    Tensor *output_reshaped = tensor_reshape(output_flat_with_bias, (int[]){batch_size, output_height, output_width, out_channels}, 4);
+    // Reshape output to desired shape: {batch_size, out_channels, output_height, output_width}
+    Tensor *output_reshaped = tensor_reshape(output_flat, (int[]){batch_size, out_channels, output_height, output_width}, 4);
 
-    // Transpose the output to {batch_size, output_channels, output_height, output_width}
-    Tensor *output_T = tensor_transpose(output_reshaped, (int[]){0, 3, 1, 2});
+    // Add bias (broadcasting automatically handles the addition)
+    Tensor *output_with_bias = tensor_add(output_reshaped, params->bias);
 
-    // Pointers to intermediate results
+    // Set pointers to intermediate results
     self->input = x;
-    self->tensor_count = 8;
+    self->tensor_count = 5;
     self->tensors = (Tensor **)malloc(self->tensor_count * sizeof(Tensor *));
-    self->tensors[0] = input_col1;
-    self->tensors[1] = input_col2;
-    self->tensors[2] = kernel_flat;
-    self->tensors[3] = kernel_T;
-    self->tensors[4] = output_flat;
-    self->tensors[5] = output_flat_with_bias;
-    self->tensors[6] = output_reshaped;
-    self->tensors[7] = output_T;
-    self->output = output_T;
+    self->tensors[0] = input_col;
+    self->tensors[1] = kernel_reshaped;
+    self->tensors[2] = output_flat;
+    self->tensors[3] = output_reshaped;
+    self->tensors[4] = output_with_bias;
+    self->output = output_with_bias;
 
-    return output_T;
+    return output_with_bias;
 }
 
 void conv2d_free(Layer *self) 

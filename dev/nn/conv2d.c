@@ -48,7 +48,7 @@ int main()
     Tensor *y_pred = layer_forward(conv1, x);
 
     // Print output tensor
-    print_tensor(y_pred, "y_pred");
+    // print_tensor(y_pred, "y_pred");
 
     // Backward pass (assuming some loss function with gradient 1.0 for simplicity)
     Tensor *loss_grad = tensor_ones(NULL, y_pred->shape, y_pred->ndim);
@@ -57,8 +57,8 @@ int main()
     backward(y_pred);
 
     // Print gradients for input, weights, and bias
-    print_tensor(conv_params->weights, "conv1.weight");
-    print_tensor(conv_params->bias, "conv1.bias");
+    // print_tensor(conv_params->weights, "conv1.weight");
+    // print_tensor(conv_params->bias, "conv1.bias");
 
     // Free memory
     tensor_free(loss_grad);
