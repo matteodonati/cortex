@@ -1,7 +1,7 @@
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 #include <cortex.h>
 
 int main() 
@@ -16,12 +16,12 @@ int main()
     int x_shape[] = {1, 1, 4, 4}; // b, c, h, w
     Tensor *x = tensor_from_array("x", x_data, x_shape, 4);
 
-    // Conv2D layer with 1 input channel, 1 output channel, 3x3 kernel size
+    // Conv2D layer with 1 input channel, 2 output channels, 3x3 kernel size
     int kernel_size[] = {3, 3};
     int stride[] = {1, 1};
     int padding[] = {0, 0};
-    int groups = 1;
-    Layer *conv1 = conv2d_create("conv1", 1, 1, kernel_size, stride, padding, groups);
+    int out_channels = 2;
+    Layer *conv1 = conv2d_create("conv1", 1, out_channels, kernel_size, stride, padding);
     Conv2DParameters *conv_params = (Conv2DParameters *)(conv1->params);
 
     // Create the model and add layers
@@ -29,24 +29,29 @@ int main()
     Layer *layers[] = {conv1};
     Model *model = model_create(layers, num_layers);
 
-    // Set weights and bias
+    // Set weights and biases for the two kernels
     float w[] = {
+        // First kernel
         0.1, 0.2, 0.3,
         0.4, 0.5, 0.6,
-        0.7, 0.8, 0.9
+        0.7, 0.8, 0.9,
+        // Second kernel
+        -0.1, -0.2, -0.3,
+        -0.4, -0.5, -0.6,
+        -0.7, -0.8, -0.9
     };
-    float b[] = {1.0};
+    float b[] = {1.0, 0.5}; // Biases for the two output channels
     memcpy(conv_params->weights->data, w, sizeof(w));
     memcpy(conv_params->bias->data, b, sizeof(b));
 
     // Forward pass
     Tensor *y_pred = layer_forward(conv1, x);
 
-    // Print output tensors
+    // Print output tensor
     print_tensor(y_pred, "y_pred");
 
     // Backward pass (assuming some loss function with gradient 1.0 for simplicity)
-    Tensor *loss_grad = tensor_ones(NULL, y_pred->shape, y_pred->ndim); // Fake loss gradient with all ones
+    Tensor *loss_grad = tensor_ones(NULL, y_pred->shape, y_pred->ndim);
     memcpy(y_pred->grad, loss_grad->data, loss_grad->size * sizeof(float));
 
     backward(y_pred);

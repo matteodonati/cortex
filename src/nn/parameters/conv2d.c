@@ -4,15 +4,15 @@
 #include <stdlib.h>
 #include "nn/parameters/conv2d.h"
 
-Parameters* conv2d_parameters_create(const char *name, int in_channels, int out_channels, int kernel_size[2], int groups) 
+Parameters* conv2d_parameters_create(const char *name, int in_channels, int out_channels, int kernel_size[2]) 
 {
     Conv2DParameters *params = (Conv2DParameters *)malloc(sizeof(Conv2DParameters));
 
-    float limit = sqrtf(groups / (float)(in_channels * kernel_size[0] * kernel_size[1]));
+    float limit = sqrtf(1 / (float)(in_channels * kernel_size[0] * kernel_size[1]));
 
     char weights_name[256];
     snprintf(weights_name, sizeof(weights_name), "%s.weight", name);
-    params->weights = tensor_rand(weights_name, (int[]){out_channels, in_channels / groups, kernel_size[0], kernel_size[1]}, 4, limit);
+    params->weights = tensor_rand(weights_name, (int[]){out_channels, in_channels / 1, kernel_size[0], kernel_size[1]}, 4, limit);
 
     char bias_name[256];
     snprintf(bias_name, sizeof(bias_name), "%s.bias", name);

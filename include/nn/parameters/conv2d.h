@@ -10,7 +10,7 @@ typedef struct Conv2DParameters
     Tensor *bias;
 } Conv2DParameters;
 
-Parameters* conv2d_parameters_create(const char *name, int in_channels, int out_channels, int kernel_size[2], int groups);
+Parameters* conv2d_parameters_create(const char *name, int in_channels, int out_channels, int kernel_size[2]);
 Tensor **conv2d_get_params(Parameters *base_params);
 void conv2d_parameters_freeze(Parameters *base_params);
 void conv2d_parameters_free(Parameters *base_params);
