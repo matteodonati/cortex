@@ -180,24 +180,28 @@ Tensor* conv2d_forward(Layer *self, Tensor *x)
     // Perform matrix multiplication. Shape: {batch_size, out_channels, output_height * output_width}
     Tensor *output_flat = tensor_matmul(kernel_reshaped, input_col);
 
-    // Reshape output to desired shape: {batch_size, out_channels, output_height, output_width}
-    Tensor *output_reshaped = tensor_reshape(output_flat, (int[]){batch_size, out_channels, output_height, output_width}, 4);
+    // Reshape bias. Shape {batch_size, out_channels, 1}
+    Tensor *bias_reshaped = tensor_reshape(params->bias, (int[]){1, out_channels, 1}, 3);
 
-    // Add bias (broadcasting automatically handles the addition)
-    Tensor *output_with_bias = tensor_add(output_reshaped, params->bias);
+    // Add bias
+    Tensor *output_with_bias = tensor_add(output_flat, bias_reshaped);
+
+    // Reshape output to desired shape: {batch_size, out_channels, output_height, output_width}
+    Tensor *output_reshaped = tensor_reshape(output_with_bias, (int[]){batch_size, out_channels, output_height, output_width}, 4);
 
     // Set pointers to intermediate results
     self->input = x;
-    self->tensor_count = 5;
+    self->tensor_count = 6;
     self->tensors = (Tensor **)malloc(self->tensor_count * sizeof(Tensor *));
     self->tensors[0] = input_col;
     self->tensors[1] = kernel_reshaped;
     self->tensors[2] = output_flat;
-    self->tensors[3] = output_reshaped;
+    self->tensors[3] = bias_reshaped;
     self->tensors[4] = output_with_bias;
-    self->output = output_with_bias;
+    self->tensors[5] = output_reshaped;
+    self->output = output_reshaped;
 
-    return output_with_bias;
+    return output_reshaped;
 }
 
 void conv2d_free(Layer *self) 
