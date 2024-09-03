@@ -21,5 +21,6 @@ void tensor_min_backward(Tensor *self);
 void tensor_sum_backward(Tensor *self);
 void tensor_mean_backward(Tensor *self);
 void tensor_cat_backward(Tensor *self);
+void col2im(Tensor *self);
 
 #endif

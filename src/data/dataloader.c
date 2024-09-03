@@ -73,8 +73,15 @@ void dataloader_get_batch(DataLoader *loader, Tensor **xs, Tensor **ys)
         Tensor *x; 
         Tensor *y;
         dataset_get_sample(loader->dataset, loader->indices[start_idx + i], &x, &y);
-        tensor_set_slice(tmp_xs, x, i);
-        tensor_set_slice(tmp_ys, y, i);
+
+        int slice_size = x->size;
+        int offset = i * slice_size;
+        memcpy(&tmp_xs->data[offset], x->data, slice_size * sizeof(float));
+
+        int slice_size = y->size;
+        int offset = i * slice_size;
+        memcpy(&tmp_ys->data[offset], y->data, slice_size * sizeof(float));
+
         tensor_free(x);
         tensor_free(y);
     }

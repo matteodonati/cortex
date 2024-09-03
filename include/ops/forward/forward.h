@@ -23,5 +23,6 @@ Tensor* tensor_argmin(Tensor *tensor, int axis);
 Tensor* tensor_sum(Tensor *tensor, int axis);
 Tensor* tensor_mean(Tensor *tensor, int axis);
 Tensor* tensor_cat(Tensor *a, Tensor *b, int axis);
+Tensor* im2col(Tensor *input, int kernel_height, int kernel_width, int stride_height, int stride_width, int pad_height, int pad_width);
 
 #endif

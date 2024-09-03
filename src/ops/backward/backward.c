@@ -391,3 +391,54 @@ void tensor_cat_backward(Tensor *self)
     backward(a);  
     backward(b);
 }
+
+void col2im(Tensor *self) 
+{
+    Tensor *input = self->grad_a;
+
+    int batch_size = input->shape[0];
+    int in_channels = input->shape[1];
+    int input_height = input->shape[2];
+    int input_width = input->shape[3];
+
+    // Retrieve the parameters from the forward pass
+    int kernel_height = self->ops_utils.cached_ints[0]; 
+    int kernel_width = self->ops_utils.cached_ints[1];
+    int stride_height = self->ops_utils.cached_ints[2];
+    int stride_width = self->ops_utils.cached_ints[3];
+    int pad_height = self->ops_utils.cached_ints[4];
+    int pad_width = self->ops_utils.cached_ints[5];
+
+    // Calculate the output dimensions
+    int output_height = (input_height + 2 * pad_height - kernel_height) / stride_height + 1;
+    int output_width = (input_width + 2 * pad_width - kernel_width) / stride_width + 1;
+
+    // Iterate over the batches and channels
+    for (int n = 0; n < batch_size; n++) 
+    {
+        for (int c = 0; c < in_channels; c++) 
+        {
+            for (int kh = 0; kh < kernel_height; kh++) 
+            {
+                for (int kw = 0; kw < kernel_width; kw++) 
+                {
+                    for (int oh = 0; oh < output_height; oh++) 
+                    {
+                        for (int ow = 0; ow < output_width; ow++) 
+                        {
+                            int h = oh * stride_height - pad_height + kh;
+                            int w = ow * stride_width - pad_width + kw;
+                            int col_index = ((c * kernel_height + kh) * kernel_width + kw) * output_width * output_height + oh * output_width + ow;
+                            if (h >= 0 && h < input_height && w >= 0 && w < input_width) 
+                            {
+                                input->grad[n * in_channels * input_height * input_width + c * input_height * input_width + h * input_width + w] += self->grad[n * self->shape[1] * self->shape[2] + col_index];
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    backward(input);
+}

@@ -6,6 +6,7 @@
 
 #define LAYER_TYPE_DENSE 1
 #define LAYER_TYPE_CONV2D 2
+#define LAYER_TYPE_MAXPOOL 3
 
 typedef struct Layer 
 {
