@@ -378,6 +378,7 @@ Tensor* tensor_max(Tensor *tensor, int axis)
     }
 
     Tensor *result = tensor_zeros(NULL, new_shape, new_ndim);
+    free(new_shape);
 
     // Initialize the result tensor data with negative infinity
     for (int i = 0; i < result->size; i++) 
@@ -436,6 +437,7 @@ Tensor* tensor_min(Tensor *tensor, int axis)
     }
 
     Tensor *result = tensor_zeros(NULL, new_shape, new_ndim);
+    free(new_shape);
 
     // Initialize the result tensor data with positive infinity
     for (int i = 0; i < result->size; i++) 
@@ -495,6 +497,7 @@ Tensor* tensor_argmax(Tensor *tensor, int axis)
 
     Tensor *result = tensor_zeros(NULL, new_shape, new_ndim);
     result->grad = NULL; // No gradient for argmax
+    free(new_shape);
 
     // Initialize the result tensor data with -1 (invalid index)
     for (int i = 0; i < result->size; i++) 
@@ -548,6 +551,7 @@ Tensor* tensor_argmin(Tensor *tensor, int axis)
 
     Tensor *result = tensor_zeros(NULL, new_shape, new_ndim);
     result->grad = NULL; // No gradient for argmin
+    free(new_shape);
 
     // Initialize the result tensor data with -1 (invalid index)
     for (int i = 0; i < result->size; i++) 
@@ -600,6 +604,7 @@ Tensor* tensor_sum(Tensor *tensor, int axis)
     }
 
     Tensor *result = tensor_zeros(NULL, new_shape, new_ndim);
+    free(new_shape);
 
     // Perform the sum operation
     for (int i = 0; i < tensor->size; i++) 
@@ -647,6 +652,7 @@ Tensor* tensor_mean(Tensor *tensor, int axis)
     }
 
     Tensor *result = tensor_zeros(NULL, new_shape, new_ndim);
+    free(new_shape);
     
     int divisor = tensor->shape[axis];
 
@@ -697,6 +703,7 @@ Tensor* tensor_cat(Tensor *a, Tensor *b, int axis)
     }
 
     Tensor *result = tensor_zeros(NULL, new_shape, a->ndim);
+    free(new_shape);
 
     // Copy data from the first tensor to the result tensor
     for (int i = 0; i < a->size; i++) 

@@ -52,22 +52,26 @@ Tensor* maxpool2d_forward(Layer *self, Tensor *x)
     int output_height = (input_height + 2 * pad_height - kernel_height) / stride_height + 1;
     int output_width = (input_width + 2 * pad_width - kernel_width) / stride_width + 1;
 
-    // im2col transformation of input tensor. Resulting shape: {batch_size, in_channels * kernel_height * kernel_width, output_height * output_width}
+    // im2col transformation of input tensor. Shape: {batch_size, in_channels * kernel_height * kernel_width, output_height * output_width}
     Tensor *input_col = im2col(x, kernel_height, kernel_width, stride_height, stride_width, pad_height, pad_width);
 
-    // Perform max operation across the appropriate axis (kernel dimensions)
-    Tensor *output_col = tensor_max(input_col, 1);
+    // Reshape input_col to {batch_size, in_channels, kernel_height * kernel_width, output_height * output_width}
+    Tensor *input_col_reshaped = tensor_reshape(input_col, (int[]){batch_size, in_channels, kernel_height * kernel_width, output_height * output_width}, 4);
 
-    // Reshape the output back to the original input dimensions after pooling
+    // Perform max operation along the kernel size axis (axis 2)
+    Tensor *output_col = tensor_max(input_col_reshaped, 2);
+
+    // Reshape the output back to {batch_size, in_channels, output_height, output_width}
     Tensor *output_reshaped = tensor_reshape(output_col, (int[]){batch_size, in_channels, output_height, output_width}, 4);
 
     // Store intermediate results for backpropagation
     self->input = x;
-    self->tensor_count = 3;
+    self->tensor_count = 4;
     self->tensors = (Tensor **)malloc(self->tensor_count * sizeof(Tensor *));
     self->tensors[0] = input_col;
-    self->tensors[1] = output_col;
-    self->tensors[2] = output_reshaped;
+    self->tensors[1] = input_col_reshaped;
+    self->tensors[2] = output_col;
+    self->tensors[3] = output_reshaped;
     self->output = output_reshaped;
 
     return output_reshaped;
