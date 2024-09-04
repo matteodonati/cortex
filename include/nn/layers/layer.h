@@ -7,6 +7,7 @@
 #define LAYER_TYPE_DENSE 1
 #define LAYER_TYPE_CONV2D 2
 #define LAYER_TYPE_MAXPOOL 3
+#define LAYER_TYPE_AVGPOOL 4
 
 typedef struct Layer 
 {
@@ -17,6 +18,7 @@ typedef struct Layer
     Tensor **tensors;
     int tensor_count;
     int layer_type;
+    bool is_training;
     Tensor *(*forward)(struct Layer *self, Tensor *input);
     void (*free)(struct Layer *self);
 } Layer;

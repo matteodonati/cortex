@@ -14,6 +14,7 @@
 #include "nn/layers/dense.h"
 #include "nn/layers/conv2d.h"
 #include "nn/layers/maxpool2d.h"
+#include "nn/layers/avgpool2d.h"
 #include "nn/model/model.h"
 #include "nn/model/utils/utils.h"
 #include "nn/activations/forward/forward.h"

@@ -1,13 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "nn/layers/maxpool2d.h"
+#include "nn/layers/avgpool2d.h"
 #include "ops/forward/forward.h"
 #include "ops/backward/backward.h"
 
-Layer* maxpool2d_create(const char *name, int kernel_size[2], int stride[2], int padding[2]) 
+Layer* avgpool2d_create(const char *name, int kernel_size[2], int stride[2], int padding[2]) 
 {
-    MaxPool2D *pool = (MaxPool2D *)malloc(sizeof(MaxPool2D));
+    AvgPool2D *pool = (AvgPool2D *)malloc(sizeof(AvgPool2D));
 
     pool->kernel_size[0] = kernel_size[0];
     pool->kernel_size[1] = kernel_size[1];
@@ -21,18 +21,18 @@ Layer* maxpool2d_create(const char *name, int kernel_size[2], int stride[2], int
         pool->base.name = (char *)malloc((strlen(name) + 1) * sizeof(char));
         strcpy(pool->base.name, name);
     }
-    pool->base.layer_type = LAYER_TYPE_MAXPOOL;
+    pool->base.layer_type = LAYER_TYPE_AVGPOOL;
     pool->base.params = NULL;
     pool->base.is_training = false;
-    pool->base.forward = &maxpool2d_forward;
-    pool->base.free = &maxpool2d_free;
+    pool->base.forward = &avgpool2d_forward;
+    pool->base.free = &avgpool2d_free;
 
     return (Layer *)pool;
 }
 
-Tensor* maxpool2d_forward(Layer *self, Tensor *x) 
+Tensor* avgpool2d_forward(Layer *self, Tensor *x) 
 {
-    MaxPool2D *layer = (MaxPool2D *)self;
+    AvgPool2D *layer = (AvgPool2D *)self;
 
     // Pooling parameters
     int kernel_height = layer->kernel_size[0];
@@ -58,8 +58,8 @@ Tensor* maxpool2d_forward(Layer *self, Tensor *x)
     // Reshape input_col to {batch_size, in_channels, kernel_height * kernel_width, output_height * output_width}
     Tensor *input_col_reshaped = tensor_reshape(input_col, (int[]){batch_size, in_channels, kernel_height * kernel_width, output_height * output_width}, 4);
 
-    // Perform max operation along the kernel size axis (axis 2)
-    Tensor *output_col = tensor_max(input_col_reshaped, 2);
+    // Perform mean operation along the kernel size axis (axis 2)
+    Tensor *output_col = tensor_mean(input_col_reshaped, 2);
 
     // Reshape the output back to {batch_size, in_channels, output_height, output_width}
     Tensor *output_reshaped = tensor_reshape(output_col, (int[]){batch_size, in_channels, output_height, output_width}, 4);
@@ -77,10 +77,10 @@ Tensor* maxpool2d_forward(Layer *self, Tensor *x)
     return output_reshaped;
 }
 
-void maxpool2d_free(Layer *self) 
+void avgpool2d_free(Layer *self) 
 {
     if (self) 
     {
-        free((MaxPool2D *)self);
+        free((AvgPool2D *)self);
     }
 }

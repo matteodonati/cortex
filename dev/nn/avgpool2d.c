@@ -26,11 +26,11 @@ int main()
     int x_shape[] = {1, 3, 4, 4}; // b, c, h, w
     Tensor *x = tensor_from_array("x", x_data, x_shape, 4);
 
-    // MaxPool2D layer with 3 input channels, kernel size 3x3, stride 1x1, and padding 0
+    // AvgPool2D layer with 3 input channels, kernel size 3x3, stride 1x1, and padding 0
     int kernel_size[] = {3, 3};
     int stride[] = {1, 1};
     int padding[] = {0, 0};
-    Layer *pool1 = maxpool2d_create("pool1", kernel_size, stride, padding);
+    Layer *pool1 = avgpool2d_create("pool1", kernel_size, stride, padding);
 
     // Create the model and add layers
     int num_layers = 1;

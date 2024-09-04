@@ -21,6 +21,7 @@ Layer* dense_create(const char *name, int input_dim, int output_dim)
     }
     dense->base.layer_type = LAYER_TYPE_DENSE;
     dense->base.params = dense_parameters_create(name, input_dim, output_dim);
+    dense->base.is_training = false;
     dense->base.forward = &dense_forward;
     dense->base.free = &dense_free;
 

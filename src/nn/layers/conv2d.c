@@ -20,7 +20,6 @@ Layer *conv2d_create(const char *name, int in_channels, int out_channels, int ke
     conv2d->padding[0] = padding[0];
     conv2d->padding[1] = padding[1];
     conv2d->groups = 1; // groups greater than one is not supported for now
-
     conv2d->base.name = NULL;
     if (name) 
     {
@@ -30,6 +29,7 @@ Layer *conv2d_create(const char *name, int in_channels, int out_channels, int ke
 
     conv2d->base.layer_type = LAYER_TYPE_CONV2D;
     conv2d->base.params = conv2d_parameters_create(name, in_channels, out_channels, kernel_size);
+    conv2d->base.is_training = false;
     conv2d->base.forward = &conv2d_forward;
     conv2d->base.free = &conv2d_free;
 

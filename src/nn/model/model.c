@@ -30,16 +30,32 @@ Model* model_create(Layer **layers, int num_layers)
     return model;
 }
 
-void model_zero_grad(Model *model)
+void model_train(Model *self)
 {
-    if (model == NULL || model->params == NULL) 
+    for (int i = 0; i < self->num_layers; i++)
+    {
+        self->layers[i]->is_training = true;
+    }
+}
+
+void model_eval(Model *self)
+{
+    for (int i = 0; i < self->num_layers; i++)
+    {
+        self->layers[i]->is_training = false;
+    }
+}
+
+void model_zero_grad(Model *self)
+{
+    if (self == NULL || self->params == NULL) 
     {
         return;
     }
 
-    for (int i = 0; i < model->num_params; i++) 
+    for (int i = 0; i < self->num_params; i++) 
     {
-        Tensor *param = model->params[i];
+        Tensor *param = self->params[i];
         if (param->grad) 
         {
             memset(param->grad, 0, param->size * sizeof(float));
@@ -47,15 +63,15 @@ void model_zero_grad(Model *model)
     }
 }
 
-void model_free(Model *model)
+void model_free(Model *self)
 {
-    if (model) 
+    if (self) 
     {
-        for (int i = 0; i < model->num_layers; i++) 
+        for (int i = 0; i < self->num_layers; i++) 
         {
-            layer_free(model->layers[i]);
+            layer_free(self->layers[i]);
         }
-        free(model->params);
-        free(model);
+        free(self->params);
+        free(self);
     }
 }

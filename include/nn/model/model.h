@@ -12,7 +12,9 @@ typedef struct Model
 } Model;
 
 Model* model_create(Layer **layers, int num_layers);
-void model_zero_grad(Model *model);
-void model_free(Model *model);
+void model_train(Model *self);
+void model_eval(Model *self);
+void model_zero_grad(Model *self);
+void model_free(Model *self);
 
 #endif
