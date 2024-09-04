@@ -131,6 +131,18 @@ void tensor_div_backward(Tensor *self)
     backward(b);
 }
 
+void tensor_scalar_add_backward(Tensor *self) 
+{
+    Tensor *tensor = self->grad_a;
+    
+    for (int i = 0; i < tensor->size; i++) 
+    {
+        tensor->grad[i] += self->grad[i];
+    }
+
+    backward(tensor);
+}
+
 void tensor_scalar_mul_backward(Tensor *self) 
 {
     Tensor *tensor = self->grad_a;

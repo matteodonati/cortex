@@ -37,6 +37,7 @@ Tensor* tensor_rand(const char *name, int *shape, int ndim, float limit);
 Tensor* tensor_zeros(const char *name, int *shape, int ndim);
 Tensor* tensor_ones(const char *name, int *shape, int ndim);
 Tensor* tensor_full(const char *name, int *shape, int ndim, float value);
+Tensor* tensor_clone(const char *name, Tensor *a);
 Tensor* tensor_like(const char *name, Tensor *a);
 void tensor_free(Tensor *tensor);
 

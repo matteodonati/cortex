@@ -69,7 +69,7 @@ Tensor* conv2d_forward(Layer *self, Tensor *x)
     // Perform matrix multiplication. Shape: {batch_size, out_channels, output_height * output_width}
     Tensor *output_flat = tensor_matmul(kernel_reshaped, input_col);
 
-    // Reshape bias. Shape {batch_size, out_channels, 1}
+    // Reshape bias. Shape {1, out_channels, 1}
     Tensor *bias_reshaped = tensor_reshape(params->bias, (int[]){1, out_channels, 1}, 3);
 
     // Add bias

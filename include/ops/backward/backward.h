@@ -12,6 +12,7 @@ void tensor_add_backward(Tensor *self);
 void tensor_sub_backward(Tensor *self);
 void tensor_mul_backward(Tensor *self);
 void tensor_div_backward(Tensor *self);
+void tensor_scalar_add_backward(Tensor *self);
 void tensor_scalar_mul_backward(Tensor *self);
 void tensor_matmul_backward(Tensor *self);
 void tensor_reshape_backward(Tensor *self);

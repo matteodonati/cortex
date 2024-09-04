@@ -209,6 +209,25 @@ Tensor* tensor_div(Tensor *a, Tensor *b)
     return result;
 }
 
+Tensor* tensor_scalar_add(Tensor *tensor, float scalar) 
+{
+    if (tensor == NULL) 
+    {
+        fprintf(stderr, "Error: Input tensor is NULL in tensor_scalar_add.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    Tensor *result = tensor_like(NULL, tensor);
+    for (int i = 0; i < tensor->size; i++) 
+    {
+        result->data[i] = tensor->data[i] + scalar;
+    }
+    result->backward = &tensor_scalar_add_backward;
+    result->grad_a = tensor;
+
+    return result;
+}
+
 Tensor* tensor_scalar_mul(Tensor *tensor, float scalar) 
 {
     if (tensor == NULL) 

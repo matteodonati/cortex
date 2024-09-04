@@ -8,6 +8,7 @@
 #define LAYER_TYPE_CONV2D 2
 #define LAYER_TYPE_MAXPOOL 3
 #define LAYER_TYPE_AVGPOOL 4
+#define LAYER_TYPE_BATCHNORM2D 5
 
 typedef struct Layer 
 {

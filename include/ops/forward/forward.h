@@ -12,6 +12,7 @@ Tensor* tensor_add(Tensor *a, Tensor *b);
 Tensor* tensor_sub(Tensor *a, Tensor *b);
 Tensor* tensor_mul(Tensor *a, Tensor *b);
 Tensor* tensor_div(Tensor *a, Tensor *b);
+Tensor* tensor_scalar_add(Tensor *tensor, float scalar);
 Tensor* tensor_scalar_mul(Tensor *tensor, float scalar);
 Tensor* tensor_matmul(Tensor *a, Tensor *b);
 Tensor* tensor_reshape(Tensor *tensor, int *new_shape, int new_ndim);

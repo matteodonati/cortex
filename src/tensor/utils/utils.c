@@ -82,7 +82,7 @@ void print_tensor(Tensor *tensor, const char *name)
     {
         printf("None");
     }
-    printf("\n");
+    printf("\n\n");
 
     free(indices);
 }
