@@ -4,17 +4,6 @@
 #include <stdlib.h>
 #include <cortex.h>
 
-void print_tensor(Tensor *tensor, const char *name) {
-    printf("Tensor %s:\n", name);
-    printf("shape:\n");
-    print_tensor_shape(tensor);
-    printf("data:\n");
-    print_tensor_data(tensor);
-    printf("grad:\n");
-    print_tensor_grad(tensor);
-    printf("\n");
-}
-
 void tensor_ops() 
 {
     int ndim_a = 4;
@@ -43,8 +32,9 @@ void tensor_ops()
     Tensor *min_result = tensor_min(a, 2);
     Tensor *argmax_result = tensor_argmax(a, 2);
     Tensor *argmin_result = tensor_argmin(a, 2);
-    Tensor *sum_result = tensor_sum(a, 2);
-    Tensor *mean_result = tensor_mean(a, 2);
+    Tensor *sum_result = tensor_sum(a, (int []){0, 2, 3}, 3);
+    Tensor *mean_result = tensor_mean(a, (int []){0, 2, 3}, 3);
+    Tensor *var_result = tensor_var(a, (int []){0, 2, 3}, 3, false);
     Tensor *cat_result = tensor_cat(a, b, 3);
 
     // Initialize gradients for backward pass
@@ -96,6 +86,11 @@ void tensor_ops()
         cat_result->grad[i] = 1.0;
     }
 
+    for (int i = 0; i < var_result->size; i++) 
+    {
+        var_result->grad[i] = 1.0;
+    }
+
     // Perform backward passes
     backward(neg);
     backward(abs);
@@ -114,6 +109,7 @@ void tensor_ops()
     backward(min_result);
     backward(sum_result);
     backward(mean_result);
+    backward(var_result);
     backward(cat_result);
 
     // Print all the results
@@ -136,6 +132,7 @@ void tensor_ops()
     print_tensor(argmin_result, "argmin");
     print_tensor(sum_result, "sum");
     print_tensor(mean_result, "mean");
+    print_tensor(var_result, "var_result");
     print_tensor(cat_result, "cat_result");
 
     // Free all tensors
@@ -158,6 +155,7 @@ void tensor_ops()
     tensor_free(argmin_result);
     tensor_free(sum_result);
     tensor_free(mean_result);
+    tensor_free(var_result);
     tensor_free(cat_result);
 }
 

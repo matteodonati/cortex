@@ -59,7 +59,7 @@ Tensor* avgpool2d_forward(Layer *self, Tensor *x)
     Tensor *input_col_reshaped = tensor_reshape(input_col, (int[]){batch_size, in_channels, kernel_height * kernel_width, output_height * output_width}, 4);
 
     // Perform mean operation along the kernel size axis (axis 2)
-    Tensor *output_col = tensor_mean(input_col_reshaped, 2);
+    Tensor *output_col = tensor_mean(input_col_reshaped, (int []){2}, 1);
 
     // Reshape the output back to {batch_size, in_channels, output_height, output_width}
     Tensor *output_reshaped = tensor_reshape(output_col, (int[]){batch_size, in_channels, output_height, output_width}, 4);

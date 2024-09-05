@@ -53,6 +53,53 @@ void adjust_indices_for_broadcasting(Tensor *a, Tensor *b, int *a_index, int *b_
     }
 }
 
+void compute_reduce_mask_and_divisor(Tensor *tensor, int *axes, int num_axes, int *reduce_mask, int *divisor)
+{
+    *divisor = 1;
+    for (int i = 0; i < tensor->ndim; i++) 
+    {
+        reduce_mask[i] = 0;
+    }
+
+    for (int i = 0; i < num_axes; i++) 
+    {
+        reduce_mask[axes[i]] = 1;
+        *divisor *= tensor->shape[axes[i]];
+    }
+}
+
+void accumulate_grad(Tensor *self, Tensor *tensor, int *reduce_mask, int divisor, bool is_var, float *mean, bool apply_var)
+{
+    for (int i = 0; i < tensor->size; i++) 
+    {
+        int result_index = 0;
+        int old_index = i;
+
+        for (int d = tensor->ndim - 1, k = self->ndim - 1; d >= 0; d--) 
+        {
+            if (reduce_mask[d]) 
+            {
+                continue;
+            }
+            int coord = (old_index / tensor->stride[d]) % tensor->shape[d];
+            result_index += coord * self->stride[k--];
+        }
+
+        if (is_var && apply_var) 
+        {
+            float diff = tensor->data[i] - mean[result_index];
+            tensor->grad[i] += (2.0 / divisor) * diff * self->grad[result_index];
+        } 
+        else if (divisor > 1) 
+        {
+            tensor->grad[i] += self->grad[result_index] / divisor;
+        } else 
+        {
+            tensor->grad[i] += self->grad[result_index];
+        }
+    }
+}
+
 void backward(Tensor *tensor)
 {
     if (tensor->backward)

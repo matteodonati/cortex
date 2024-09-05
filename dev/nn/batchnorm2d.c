@@ -73,7 +73,7 @@ int main()
     memcpy(conv_params->bias->data, b, sizeof(b));
 
     // Set training flag to true for all layers
-    model_eval(model);
+    model_train(model);
 
     // Forward pass through Conv2D and BatchNorm2D
     Tensor *y_conv = layer_forward(conv1, x);

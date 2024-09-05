@@ -17,11 +17,12 @@ void tensor_scalar_mul_backward(Tensor *self);
 void tensor_matmul_backward(Tensor *self);
 void tensor_reshape_backward(Tensor *self);
 void tensor_transpose_backward(Tensor *self);
-void tensor_max_backward(Tensor *self);
-void tensor_min_backward(Tensor *self);
+void tensor_max_min_backward(Tensor *self);
 void tensor_sum_backward(Tensor *self);
 void tensor_mean_backward(Tensor *self);
+void tensor_var_backward(Tensor *self);
 void tensor_cat_backward(Tensor *self);
 void col2im(Tensor *self);
+void tensor_normalize2d_backward(Tensor *self);
 
 #endif

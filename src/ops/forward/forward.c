@@ -55,7 +55,7 @@ Tensor* tensor_sqrt(Tensor *tensor)
     Tensor *result = tensor_like(NULL, tensor);
     for (int i = 0; i < tensor->size; i++) 
     {
-        result->data[i] = sqrt(tensor->data[i]);
+        result->data[i] = sqrtf(tensor->data[i]);
     }
     result->backward = &tensor_sqrt_backward;
     result->grad_a = tensor;
@@ -74,7 +74,7 @@ Tensor* tensor_exp(Tensor *tensor)
     Tensor *result = tensor_like(NULL, tensor);
     for (int i = 0; i < tensor->size; i++) 
     {
-        result->data[i] = exp(tensor->data[i]);
+        result->data[i] = expf(tensor->data[i]);
     }
     result->backward = &tensor_exp_backward;
     result->grad_a = tensor;
@@ -93,7 +93,7 @@ Tensor* tensor_log(Tensor *tensor)
     Tensor *result = tensor_like(NULL, tensor);
     for (int i = 0; i < tensor->size; i++)
     {
-        result->data[i] = log(tensor->data[i]);
+        result->data[i] = logf(tensor->data[i]);
     }
     result->backward = &tensor_log_backward;
     result->grad_a = tensor;
@@ -386,7 +386,7 @@ Tensor* tensor_max(Tensor *tensor, int axis)
     }
 
     int new_ndim = tensor->ndim - 1;
-    int *new_shape = (int*)malloc(new_ndim * sizeof(int));
+    int new_shape[new_ndim];
 
     for (int i = 0, j = 0; i < tensor->ndim; i++) 
     {
@@ -397,7 +397,6 @@ Tensor* tensor_max(Tensor *tensor, int axis)
     }
 
     Tensor *result = tensor_zeros(NULL, new_shape, new_ndim);
-    free(new_shape);
 
     // Initialize the result tensor data with negative infinity
     for (int i = 0; i < result->size; i++) 
@@ -430,7 +429,7 @@ Tensor* tensor_max(Tensor *tensor, int axis)
     }
 
     result->ops_utils.cached_int = axis;
-    result->backward = &tensor_max_backward;
+    result->backward = &tensor_max_min_backward;
     result->grad_a = tensor;
 
     return result;
@@ -445,7 +444,7 @@ Tensor* tensor_min(Tensor *tensor, int axis)
     }
 
     int new_ndim = tensor->ndim - 1;
-    int *new_shape = (int*)malloc(new_ndim * sizeof(int));
+    int new_shape[new_ndim];
 
     for (int i = 0, j = 0; i < tensor->ndim; i++) 
     {
@@ -456,7 +455,6 @@ Tensor* tensor_min(Tensor *tensor, int axis)
     }
 
     Tensor *result = tensor_zeros(NULL, new_shape, new_ndim);
-    free(new_shape);
 
     // Initialize the result tensor data with positive infinity
     for (int i = 0; i < result->size; i++) 
@@ -489,7 +487,7 @@ Tensor* tensor_min(Tensor *tensor, int axis)
     }
 
     result->ops_utils.cached_int = axis;
-    result->backward = &tensor_min_backward;
+    result->backward = &tensor_max_min_backward;
     result->grad_a = tensor;
 
     return result;
@@ -504,7 +502,7 @@ Tensor* tensor_argmax(Tensor *tensor, int axis)
     }
 
     int new_ndim = tensor->ndim - 1;
-    int *new_shape = (int*)malloc(new_ndim * sizeof(int));
+    int new_shape[new_ndim];
 
     for (int i = 0, j = 0; i < tensor->ndim; i++) 
     {
@@ -515,8 +513,6 @@ Tensor* tensor_argmax(Tensor *tensor, int axis)
     }
 
     Tensor *result = tensor_zeros(NULL, new_shape, new_ndim);
-    result->grad = NULL; // No gradient for argmax
-    free(new_shape);
 
     // Initialize the result tensor data with -1 (invalid index)
     for (int i = 0; i < result->size; i++) 
@@ -558,7 +554,7 @@ Tensor* tensor_argmin(Tensor *tensor, int axis)
     }
 
     int new_ndim = tensor->ndim - 1;
-    int *new_shape = (int*)malloc(new_ndim * sizeof(int));
+    int new_shape[new_ndim];
 
     for (int i = 0, j = 0; i < tensor->ndim; i++) 
     {
@@ -569,8 +565,6 @@ Tensor* tensor_argmin(Tensor *tensor, int axis)
     }
 
     Tensor *result = tensor_zeros(NULL, new_shape, new_ndim);
-    result->grad = NULL; // No gradient for argmin
-    free(new_shape);
 
     // Initialize the result tensor data with -1 (invalid index)
     for (int i = 0; i < result->size; i++) 
@@ -603,7 +597,7 @@ Tensor* tensor_argmin(Tensor *tensor, int axis)
     return result;
 }
 
-Tensor* tensor_sum(Tensor *tensor, int axis) 
+Tensor* tensor_sum(Tensor *tensor, int *axes, int num_axes) 
 {
     if (tensor == NULL) 
     {
@@ -611,19 +605,100 @@ Tensor* tensor_sum(Tensor *tensor, int axis)
         exit(EXIT_FAILURE);
     }
 
-    int new_ndim = tensor->ndim - 1;
-    int *new_shape = (int*)malloc(new_ndim * sizeof(int));
+    int new_ndim = tensor->ndim - num_axes;
+    int new_shape[new_ndim];
 
+    // Determine which axes are not being summed over
+    int sum_mask[tensor->ndim];
+    for (int i = 0; i < tensor->ndim; i++) 
+    {
+        sum_mask[i] = 0;
+    }
+    for (int i = 0; i < num_axes; i++) 
+    {
+        sum_mask[axes[i]] = 1;
+    }
+
+    // Create the new shape
     for (int i = 0, j = 0; i < tensor->ndim; i++) 
     {
-        if (i != axis) 
+        if (!sum_mask[i]) 
         {
             new_shape[j++] = tensor->shape[i];
         }
     }
 
     Tensor *result = tensor_zeros(NULL, new_shape, new_ndim);
-    free(new_shape);
+
+    // Perform the sum operation over the specified axes
+    for (int i = 0; i < tensor->size; i++) 
+    {
+        int result_index = 0;
+        int old_index = i;
+
+        for (int d = tensor->ndim - 1, k = new_ndim - 1; d >= 0; d--) 
+        {
+            if (sum_mask[d]) 
+            {
+                continue;
+            }
+            int coord = (old_index / tensor->stride[d]) % tensor->shape[d];
+            result_index += coord * result->stride[k--];
+        }
+
+        result->data[result_index] += tensor->data[i];
+    }
+
+    int *axes_copy = (int*)malloc(num_axes * sizeof(int));
+    memcpy(axes_copy, axes, num_axes * sizeof(int));
+
+    result->ops_utils.cached_ints = axes_copy;
+    result->ops_utils.cached_int = num_axes;
+    result->backward = &tensor_sum_backward;
+    result->grad_a = tensor;
+
+    return result;
+}
+
+Tensor* tensor_mean(Tensor *tensor, int *axes, int num_axes) 
+{
+    if (tensor == NULL) 
+    {
+        fprintf(stderr, "Error: Input tensor is NULL in tensor_mean.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    int new_ndim = tensor->ndim - num_axes;
+    int new_shape[new_ndim];
+
+    // Determine which axes are being averaged over
+    int sum_mask[tensor->ndim];
+    for (int i = 0; i < tensor->ndim; i++) 
+    {
+        sum_mask[i] = 0;
+    }
+    for (int i = 0; i < num_axes; i++) 
+    {
+        sum_mask[axes[i]] = 1;
+    }
+
+    // Create the new shape
+    for (int i = 0, j = 0; i < tensor->ndim; i++) 
+    {
+        if (!sum_mask[i]) 
+        {
+            new_shape[j++] = tensor->shape[i];
+        }
+    }
+
+    Tensor *result = tensor_zeros(NULL, new_shape, new_ndim);
+
+    // Compute the divisor by multiplying sizes of all axes over which the mean is being taken
+    int divisor = 1;
+    for (int i = 0; i < num_axes; i++) 
+    {
+        divisor *= tensor->shape[axes[i]];
+    }
 
     // Perform the sum operation
     for (int i = 0; i < tensor->size; i++) 
@@ -633,7 +708,7 @@ Tensor* tensor_sum(Tensor *tensor, int axis)
 
         for (int d = tensor->ndim - 1, k = new_ndim - 1; d >= 0; d--) 
         {
-            if (d == axis) 
+            if (sum_mask[d]) 
             {
                 continue;
             }
@@ -644,64 +719,124 @@ Tensor* tensor_sum(Tensor *tensor, int axis)
         result->data[result_index] += tensor->data[i];
     }
 
-    result->ops_utils.cached_int = axis;
-    result->backward = &tensor_sum_backward;
+    // Divide by the divisor to get the mean
+    for (int i = 0; i < result->size; i++) 
+    {
+        result->data[i] /= divisor;
+    }
+
+    int *axes_copy = (int*)malloc(num_axes * sizeof(int));
+    memcpy(axes_copy, axes, num_axes * sizeof(int));
+
+    result->ops_utils.cached_ints = axes_copy;
+    result->ops_utils.cached_int = num_axes;
+    result->backward = &tensor_mean_backward;
     result->grad_a = tensor;
 
     return result;
 }
 
-Tensor* tensor_mean(Tensor *tensor, int axis) 
+Tensor* tensor_var(Tensor *tensor, int *axes, int num_axes, bool unbiased) 
 {
     if (tensor == NULL) 
     {
-        fprintf(stderr, "Error: Input tensor is NULL in tensor_mean.\n");
+        fprintf(stderr, "Error: Input tensor is NULL in tensor_var.\n");
         exit(EXIT_FAILURE);
     }
 
-    int new_ndim = tensor->ndim - 1;
-    int *new_shape = (int*)malloc(new_ndim * sizeof(int));
+    int new_ndim = tensor->ndim - num_axes;
+    int new_shape[new_ndim];
 
+    // Determine which axes are being reduced
+    int reduce_mask[tensor->ndim];
+    for (int i = 0; i < tensor->ndim; i++) 
+    {
+        reduce_mask[i] = 0;
+    }
+    for (int i = 0; i < num_axes; i++) 
+    {
+        reduce_mask[axes[i]] = 1;
+    }
+
+    // Create the new shape after reduction
     for (int i = 0, j = 0; i < tensor->ndim; i++) 
     {
-        if (i != axis) 
+        if (!reduce_mask[i]) 
         {
             new_shape[j++] = tensor->shape[i];
         }
     }
 
     Tensor *result = tensor_zeros(NULL, new_shape, new_ndim);
-    free(new_shape);
-    
-    int divisor = tensor->shape[axis];
+    float *mean = (float*)calloc(result->size, sizeof(float));
 
-    // Perform sum
+    // Compute the divisor by multiplying sizes of all axes over which the variance is being computed
+    int divisor = 1;
+    for (int i = 0; i < num_axes; i++) 
+    {
+        divisor *= tensor->shape[axes[i]];
+    }
+
+    // Compute the mean manually
     for (int i = 0; i < tensor->size; i++) 
     {
-        int result_index = 0;
+        int mean_index = 0;
         int old_index = i;
 
         for (int d = tensor->ndim - 1, k = new_ndim - 1; d >= 0; d--) 
         {
-            if (d == axis) 
+            if (reduce_mask[d]) 
             {
                 continue;
             }
             int coord = (old_index / tensor->stride[d]) % tensor->shape[d];
-            result_index += coord * result->stride[k--];
+            mean_index += coord * result->stride[k--];
         }
 
-        result->data[result_index] += tensor->data[i];
+        mean[mean_index] += tensor->data[i];
     }
 
-    // Divide by the number of elements along the axis
+    // Divide by the divisor to get the mean
+    for (int i = 0; i < result->size; i++) 
+    {
+        mean[i] /= divisor;
+    }
+
+    // Calculate the variance
+    for (int i = 0; i < tensor->size; i++) 
+    {
+        int var_index = 0;
+        int old_index = i;
+
+        for (int d = tensor->ndim - 1, k = new_ndim - 1; d >= 0; d--) 
+        {
+            if (reduce_mask[d]) 
+            {
+                continue;
+            }
+            int coord = (old_index / tensor->stride[d]) % tensor->shape[d];
+            var_index += coord * result->stride[k--];
+        }
+
+        double diff = tensor->data[i] - mean[var_index];
+        result->data[var_index] += diff * diff;
+    }
+
+    free(mean);
+
+    // Divide by divisor (for unbiased, use divisor - 1)
+    divisor = unbiased ? divisor - 1 : divisor;
     for (int i = 0; i < result->size; i++) 
     {
         result->data[i] /= divisor;
     }
 
-    result->ops_utils.cached_int = axis;
-    result->backward = &tensor_mean_backward;
+    int *axes_copy = (int*)malloc(num_axes * sizeof(int));
+    memcpy(axes_copy, axes, num_axes * sizeof(int));
+
+    result->ops_utils.cached_ints = axes_copy;
+    result->ops_utils.cached_int = num_axes;
+    result->backward = &tensor_var_backward;
     result->grad_a = tensor;
 
     return result;
@@ -715,14 +850,13 @@ Tensor* tensor_cat(Tensor *a, Tensor *b, int axis)
         exit(EXIT_FAILURE);
     }
 
-    int *new_shape = (int *)malloc(a->ndim * sizeof(int));
+    int new_shape[a->ndim];
     for (int i = 0; i < a->ndim; i++) 
     {
         new_shape[i] = (i == axis) ? (a->shape[i] + b->shape[i]) : a->shape[i];
     }
 
     Tensor *result = tensor_zeros(NULL, new_shape, a->ndim);
-    free(new_shape);
 
     // Copy data from the first tensor to the result tensor
     for (int i = 0; i < a->size; i++) 
@@ -766,7 +900,7 @@ Tensor* tensor_cat(Tensor *a, Tensor *b, int axis)
     return result;
 }
 
-Tensor* im2col(Tensor *input, int kernel_height, int kernel_width, int stride_height, int stride_width, int pad_height, int pad_width) 
+Tensor* im2col(Tensor *input, int kernel_height, int kernel_width, int stride_height, int stride_width, int pad_height, int pad_width)
 {
     int batch_size = input->shape[0];
     int in_channels = input->shape[1];
@@ -824,4 +958,79 @@ Tensor* im2col(Tensor *input, int kernel_height, int kernel_width, int stride_he
     col->ops_utils.cached_ints[5] = pad_width;
 
     return col;
+}
+
+Tensor* tensor_normalize2d(Tensor *x, float epsilon, bool is_training, Tensor *mean, Tensor *var) 
+{
+    int batch_size = x->shape[0];
+    int num_features = x->shape[1];
+    int height = x->shape[2];
+    int width = x->shape[3];
+    int num_elements = batch_size * height * width;
+
+    Tensor *y = tensor_zeros(NULL, x->shape, x->ndim);
+
+    if (is_training) 
+    {
+        // Compute mean and variance during training
+        for (int c = 0; c < num_features; c++) 
+        {
+            float sum = 0.0;
+            float var_sum = 0.0;
+
+            for (int n = 0; n < batch_size; n++) 
+            {
+                for (int h = 0; h < height; h++) 
+                {
+                    for (int w = 0; w < width; w++) 
+                    {
+                        int idx = ((n * num_features + c) * height + h) * width + w;
+                        sum += x->data[idx];
+                    }
+                }
+            }
+            mean->data[c] = sum / num_elements;
+
+            for (int n = 0; n < batch_size; n++) 
+            {
+                for (int h = 0; h < height; h++) 
+                {
+                    for (int w = 0; w < width; w++) 
+                    {
+                        int idx = ((n * num_features + c) * height + h) * width + w;
+                        float diff = x->data[idx] - mean->data[c];
+                        var_sum += diff * diff;
+                    }
+                }
+            }
+            var->data[c] = var_sum / num_elements;
+        }
+    }
+
+    // Normalize
+    for (int c = 0; c < num_features; c++) 
+    {
+        float inv_stddev = 1.0f / sqrtf(var->data[c] + epsilon);
+
+        for (int n = 0; n < batch_size; n++) 
+        {
+            for (int h = 0; h < height; h++) 
+            {
+                for (int w = 0; w < width; w++) 
+                {
+                    int idx = ((n * num_features + c) * height + h) * width + w;
+                    y->data[idx] = (x->data[idx] - mean->data[c]) * inv_stddev;
+                }
+            }
+        }
+    }
+
+    y->backward = tensor_normalize2d_backward;
+    y->ops_utils.cached_tensors = (Tensor **)malloc(2 * sizeof(Tensor *));
+    y->grad_a = x;
+    y->ops_utils.cached_tensors[0] = mean;
+    y->ops_utils.cached_tensors[1] = var;
+    y->ops_utils.cached_float = epsilon;
+
+    return y;
 }

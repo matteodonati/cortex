@@ -33,7 +33,7 @@ void tensor_sqrt_backward(Tensor *self)
 
     for (int i = 0; i < self->size; i++) 
     {
-        tensor->grad[i] += 0.5f / sqrt(tensor->data[i]) * self->grad[i];
+        tensor->grad[i] += 0.5f / sqrtf(tensor->data[i]) * self->grad[i];
     }
 
     backward(tensor);
@@ -45,7 +45,7 @@ void tensor_exp_backward(Tensor *self)
 
     for (int i = 0; i < self->size; i++) 
     {
-        tensor->grad[i] += exp(tensor->data[i]) * self->grad[i];
+        tensor->grad[i] += expf(tensor->data[i]) * self->grad[i];
     }
 
     backward(tensor);
@@ -249,35 +249,7 @@ void tensor_transpose_backward(Tensor *self)
     backward(tensor);
 }
 
-void tensor_max_backward(Tensor *self) 
-{
-    Tensor *tensor = self->grad_a;
-
-    for (int i = 0; i < tensor->size; i++) 
-    {
-        int result_index = 0;
-        int old_index = i;
-
-        for (int d = tensor->ndim - 1, k = self->ndim - 1; d >= 0; d--) 
-        {
-            if (d == self->ops_utils.cached_int)
-            {
-                continue;
-            }
-            int coord = (old_index / tensor->stride[d]) % tensor->shape[d];
-            result_index += coord * self->stride[k--];
-        }
-
-        if (tensor->data[i] == self->data[result_index]) 
-        {
-            tensor->grad[i] += self->grad[result_index];
-        }
-    }
-
-    backward(tensor);
-}
-
-void tensor_min_backward(Tensor *self) 
+void tensor_max_min_backward(Tensor *self) 
 {
     Tensor *tensor = self->grad_a;
 
@@ -308,24 +280,14 @@ void tensor_min_backward(Tensor *self)
 void tensor_sum_backward(Tensor *self) 
 {
     Tensor *tensor = self->grad_a;
+    int *axes = self->ops_utils.cached_ints;
+    int num_axes = self->ops_utils.cached_int;
+    int reduce_mask[tensor->ndim];
+    int divisor;
 
-    for (int i = 0; i < tensor->size; i++) 
-    {
-        int result_index = 0;
-        int old_index = i;
-
-        for (int d = tensor->ndim - 1, k = self->ndim - 1; d >= 0; d--) 
-        {
-            if (d == self->ops_utils.cached_int) 
-            {
-                continue;
-            }
-            int coord = (old_index / tensor->stride[d]) % tensor->shape[d];
-            result_index += coord * self->stride[k--];
-        }
-
-        tensor->grad[i] += self->grad[result_index];
-    }
+    // Compute the reduce_mask and accumulate gradients (no divisor needed for sum)
+    compute_reduce_mask_and_divisor(tensor, axes, num_axes, reduce_mask, &divisor);
+    accumulate_grad(self, tensor, reduce_mask, 1, false, NULL, false);
 
     backward(tensor);
 }
@@ -333,29 +295,59 @@ void tensor_sum_backward(Tensor *self)
 void tensor_mean_backward(Tensor *self) 
 {
     Tensor *tensor = self->grad_a;
+    int *axes = self->ops_utils.cached_ints;
+    int num_axes = self->ops_utils.cached_int;
+    int reduce_mask[tensor->ndim];
+    int divisor;
 
-    // Calculate the divisor
-    int axis = self->ops_utils.cached_int;
-    int divisor = tensor->shape[axis];
+    // Compute the reduce_mask and divisor, and accumulate gradient
+    compute_reduce_mask_and_divisor(tensor, axes, num_axes, reduce_mask, &divisor);
+    accumulate_grad(self, tensor, reduce_mask, divisor, false, NULL, false);
 
+    backward(tensor);
+}
+
+void tensor_var_backward(Tensor *self) 
+{
+    Tensor *tensor = self->grad_a;
+    int *axes = self->ops_utils.cached_ints;
+    int num_axes = self->ops_utils.cached_int;
+    int reduce_mask[tensor->ndim];
+    int divisor;
+
+    // Compute the reduce_mask and divisor
+    compute_reduce_mask_and_divisor(tensor, axes, num_axes, reduce_mask, &divisor);
+
+    // Unbiased variance divisor adjustment
+    int unbiased = (divisor > 1) ? divisor - 1 : divisor;
+
+    // Recompute the mean in the backward pass
+    float *mean = (float*)calloc(self->size, sizeof(float));
     for (int i = 0; i < tensor->size; i++) 
     {
-        int result_index = 0;
+        int mean_index = 0;
         int old_index = i;
 
-        // Compute the index for the result tensor excluding the axis dimension
         for (int d = tensor->ndim - 1, k = self->ndim - 1; d >= 0; d--) 
         {
-            if (d == axis) 
+            if (reduce_mask[d]) 
             {
                 continue;
             }
             int coord = (old_index / tensor->stride[d]) % tensor->shape[d];
-            result_index += coord * self->stride[k--];
+            mean_index += coord * self->stride[k--];
         }
 
-        tensor->grad[i] += self->grad[result_index] / divisor;
+        mean[mean_index] += tensor->data[i];
     }
+    for (int i = 0; i < self->size; i++) 
+    {
+        mean[i] /= divisor;
+    }
+
+    // Accumulate gradients using variance formula
+    accumulate_grad(self, tensor, reduce_mask, unbiased, true, mean, true);
+    free(mean);
 
     backward(tensor);
 }
@@ -453,4 +445,56 @@ void col2im(Tensor *self)
     }
 
     backward(input);
+}
+
+void tensor_normalize2d_backward(Tensor *self) 
+{
+    Tensor *x = self->grad_a;
+    Tensor *mean = self->ops_utils.cached_tensors[0];
+    Tensor *var = self->ops_utils.cached_tensors[1];
+    int batch_size = x->shape[0];
+    int num_features = x->shape[1];
+    int height = x->shape[2];
+    int width = x->shape[3];
+    float epsilon = self->ops_utils.cached_float;
+    int num_elements = batch_size * height * width;
+
+    // Propagate gradients
+    for (int c = 0; c < num_features; c++) 
+    {
+        float inv_stddev = 1.0f / sqrtf(var->data[c] + epsilon);
+        float dvar = 0.0f, dmean = 0.0f;
+
+        // Calculate gradient for variance and mean
+        for (int n = 0; n < batch_size; n++) 
+        {
+            for (int h = 0; h < height; h++) 
+            {
+                for (int w = 0; w < width; w++) 
+                {
+                    int idx = ((n * num_features + c) * height + h) * width + w;
+                    float diff = x->data[idx] - mean->data[c];
+                    dvar += self->grad[idx] * diff * (-0.5f) * powf(var->data[c] + epsilon, -1.5f);
+                    dmean += self->grad[idx] * (-inv_stddev);
+                }
+            }
+        }
+        dmean /= num_elements;
+
+        // Calculate gradients for the input tensor
+        for (int n = 0; n < batch_size; n++) 
+        {
+            for (int h = 0; h < height; h++) 
+            {
+                for (int w = 0; w < width; w++) 
+                {
+                    int idx = ((n * num_features + c) * height + h) * width + w;
+                    float diff = x->data[idx] - mean->data[c];
+                    x->grad[idx] += (self->grad[idx] * inv_stddev) + (dvar * 2 * diff / num_elements) + dmean;
+                }
+            }
+        }
+    }
+
+    backward(x);
 }
