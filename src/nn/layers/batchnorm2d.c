@@ -45,14 +45,12 @@ Tensor* batchnorm2d_forward(Layer *self, Tensor *x)
     // Tensors
     Tensor *mean = NULL;
     Tensor *var = NULL;
-    Tensor *normalized_x = NULL;
 
     if (self->is_training) 
     {
-        // Normalize using computed mean and variance during training
+        // Use computed mean and variance during training
         mean = tensor_zeros(NULL, (int[]){num_features}, 1);
         var = tensor_zeros(NULL, (int[]){num_features}, 1);
-        normalized_x = tensor_normalize2d(x, bn->epsilon, true, mean, var);
 
         // Update running mean and variance using momentum
         for (int c = 0; c < num_features; c++) 
@@ -64,13 +62,15 @@ Tensor* batchnorm2d_forward(Layer *self, Tensor *x)
     } 
     else 
     {
-        // Normalize using running mean and variance during evaluation
+        // Use running mean and variance during evaluation
         mean = tensor_clone(NULL, bn->running_mean);
         var = tensor_clone(NULL, bn->running_var);
-        normalized_x = tensor_normalize2d(x, bn->epsilon, false, mean, var);
     }
 
-    // Scale and shift: y = gamma * normalized_x + beta
+    // Normalize
+    Tensor *normalized_x = tensor_normalize2d(x, self->is_training, mean, var, (int []){0, 2, 3}, 3, bn->epsilon);
+
+    // Scale and shift
     Tensor *gamma_reshaped = tensor_reshape(params->gamma, (int[]){num_features, 1, 1}, 3);
     Tensor *beta_reshaped = tensor_reshape(params->beta, (int[]){num_features, 1, 1}, 3);
     Tensor *scaled_x = tensor_mul(normalized_x, gamma_reshaped);

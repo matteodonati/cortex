@@ -450,51 +450,73 @@ void col2im(Tensor *self)
 void tensor_normalize2d_backward(Tensor *self) 
 {
     Tensor *x = self->grad_a;
-    Tensor *mean = self->ops_utils.cached_tensors[0];
-    Tensor *var = self->ops_utils.cached_tensors[1];
-    int batch_size = x->shape[0];
-    int num_features = x->shape[1];
-    int height = x->shape[2];
-    int width = x->shape[3];
+    Tensor *mean = self->ops_utils.cached_tensors[0]; // Cached mean
+    Tensor *var = self->ops_utils.cached_tensors[1];  // Cached variance
     float epsilon = self->ops_utils.cached_float;
-    int num_elements = batch_size * height * width;
+    int *axes = self->ops_utils.cached_ints;
+    int num_axes = self->ops_utils.cached_int;
 
-    // Propagate gradients
-    for (int c = 0; c < num_features; c++) 
+    // Recompute the divisor based on the axes
+    int divisor;
+    int reduce_mask[x->ndim];
+    compute_reduce_mask_and_divisor(x, axes, num_axes, reduce_mask, &divisor);
+
+
+    Tensor *dvar = tensor_zeros(NULL, var->shape, var->ndim);
+    Tensor *dmean = tensor_zeros(NULL, mean->shape, mean->ndim);
+
+    for (int i = 0; i < x->size; i++) 
     {
-        float inv_stddev = 1.0f / sqrtf(var->data[c] + epsilon);
-        float dvar = 0.0f, dmean = 0.0f;
+        int mean_index = 0;
+        int old_index = i;
 
-        // Calculate gradient for variance and mean
-        for (int n = 0; n < batch_size; n++) 
+        // Compute the index in mean/var tensor by skipping reduced axes
+        for (int d = x->ndim - 1, k = mean->ndim - 1; d >= 0; d--) 
         {
-            for (int h = 0; h < height; h++) 
+            if (reduce_mask[d]) 
             {
-                for (int w = 0; w < width; w++) 
-                {
-                    int idx = ((n * num_features + c) * height + h) * width + w;
-                    float diff = x->data[idx] - mean->data[c];
-                    dvar += self->grad[idx] * diff * (-0.5f) * powf(var->data[c] + epsilon, -1.5f);
-                    dmean += self->grad[idx] * (-inv_stddev);
-                }
+                continue;
             }
+            int coord = (old_index / x->stride[d]) % x->shape[d];
+            mean_index += coord * mean->stride[k--];
         }
-        dmean /= num_elements;
 
-        // Calculate gradients for the input tensor
-        for (int n = 0; n < batch_size; n++) 
-        {
-            for (int h = 0; h < height; h++) 
-            {
-                for (int w = 0; w < width; w++) 
-                {
-                    int idx = ((n * num_features + c) * height + h) * width + w;
-                    float diff = x->data[idx] - mean->data[c];
-                    x->grad[idx] += (self->grad[idx] * inv_stddev) + (dvar * 2 * diff / num_elements) + dmean;
-                }
-            }
-        }
+        // Compute dvar and dmean
+        float diff = x->data[i] - mean->data[mean_index];
+        dvar->data[mean_index] += self->grad[i] * diff * (-0.5f) * powf(var->data[mean_index] + epsilon, -1.5f);
+        dmean->data[mean_index] += self->grad[i] * (-1.0f / sqrtf(var->data[mean_index] + epsilon));
     }
+
+    // Final correction for dmean (as it aggregates contributions from all elements)
+    for (int i = 0; i < dmean->size; i++) 
+    {
+        dmean->data[i] /= divisor;
+    }
+
+    // Backpropagate gradients to input x
+    for (int i = 0; i < x->size; i++) 
+    {
+        int mean_index = 0;
+        int old_index = i;
+
+        // Compute the index in mean/var tensor by skipping reduced axes
+        for (int d = x->ndim - 1, k = mean->ndim - 1; d >= 0; d--) 
+        {
+            if (reduce_mask[d]) 
+            {
+                continue;
+            }
+            int coord = (old_index / x->stride[d]) % x->shape[d];
+            mean_index += coord * mean->stride[k--];
+        }
+
+        // Gradient wrt input x
+        float diff = x->data[i] - mean->data[mean_index];
+        x->grad[i] += (self->grad[i] / sqrtf(var->data[mean_index] + epsilon)) + (dvar->data[mean_index] * 2 * diff / divisor) + dmean->data[mean_index];
+    }
+
+    tensor_free(dvar);
+    tensor_free(dmean);
 
     backward(x);
 }

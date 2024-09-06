@@ -767,77 +767,83 @@ Tensor* im2col(Tensor *input, int kernel_height, int kernel_width, int stride_he
     return col;
 }
 
-Tensor* tensor_normalize2d(Tensor *x, float epsilon, bool is_training, Tensor *mean, Tensor *var) 
+Tensor* tensor_normalize2d(Tensor *x, bool is_training, Tensor *mean, Tensor *var, int *axes, int num_axes, float epsilon) 
 {
-    int batch_size = x->shape[0];
-    int num_features = x->shape[1];
-    int height = x->shape[2];
-    int width = x->shape[3];
-    int num_elements = batch_size * height * width;
-
     Tensor *y = tensor_zeros(NULL, x->shape, x->ndim);
+
+    int reduce_mask[x->ndim];
 
     if (is_training) 
     {
-        // Compute mean and variance during training
-        for (int c = 0; c < num_features; c++) 
+        // Determine reduce mask and divisor
+        int divisor;
+        compute_reduce_mask_and_divisor(x, axes, num_axes, reduce_mask, &divisor);
+
+        // Compute the mean
+        tensor_reduce(x, mean, reduce_mask);
+        for (int i = 0; i < mean->size; i++) 
         {
-            float sum = 0.0;
-            float var_sum = 0.0;
+            mean->data[i] /= divisor;
+        }
 
-            for (int n = 0; n < batch_size; n++) 
-            {
-                for (int h = 0; h < height; h++) 
-                {
-                    for (int w = 0; w < width; w++) 
-                    {
-                        int idx = ((n * num_features + c) * height + h) * width + w;
-                        sum += x->data[idx];
-                    }
-                }
-            }
-            mean->data[c] = sum / num_elements;
+        // Compute the variance
+        for (int i = 0; i < x->size; i++) 
+        {
+            int var_index = 0;
+            int old_index = i;
 
-            for (int n = 0; n < batch_size; n++) 
+            for (int d = x->ndim - 1, k = var->ndim - 1; d >= 0; d--) 
             {
-                for (int h = 0; h < height; h++) 
+                if (reduce_mask[d]) 
                 {
-                    for (int w = 0; w < width; w++) 
-                    {
-                        int idx = ((n * num_features + c) * height + h) * width + w;
-                        float diff = x->data[idx] - mean->data[c];
-                        var_sum += diff * diff;
-                    }
+                    continue;
                 }
+                int coord = (old_index / x->stride[d]) % x->shape[d];
+                var_index += coord * var->stride[k--];
             }
-            var->data[c] = var_sum / num_elements;
+            float diff = x->data[i] - mean->data[var_index];
+            var->data[var_index] += diff * diff;
+        }
+        for (int i = 0; i < var->size; i++) 
+        {
+            var->data[i] /= divisor;
         }
     }
 
     // Normalize
-    for (int c = 0; c < num_features; c++) 
+    for (int i = 0; i < x->size; i++) 
     {
-        float inv_stddev = 1.0f / sqrtf(var->data[c] + epsilon);
+        int mean_index = 0;
+        int old_index = i;
 
-        for (int n = 0; n < batch_size; n++) 
+        // Calculate the mean and var index by skipping reduced axes
+        for (int d = x->ndim - 1, k = mean->ndim - 1; d >= 0; d--) 
         {
-            for (int h = 0; h < height; h++) 
+            if (reduce_mask[d]) 
             {
-                for (int w = 0; w < width; w++) 
-                {
-                    int idx = ((n * num_features + c) * height + h) * width + w;
-                    y->data[idx] = (x->data[idx] - mean->data[c]) * inv_stddev;
-                }
+                continue;
             }
+            int coord = (old_index / x->stride[d]) % x->shape[d];
+            mean_index += coord * mean->stride[k--];
         }
+
+        // Normalize: (x - mean) / stddev
+        float stddev = sqrtf(var->data[mean_index] + epsilon);
+        y->data[i] = (x->data[i] - mean->data[mean_index]) / stddev;
     }
 
+    // Cache axes for backward pass
+    int *axes_copy = (int*)malloc(num_axes * sizeof(int));
+    memcpy(axes_copy, axes, num_axes * sizeof(int));
+
     y->backward = tensor_normalize2d_backward;
-    y->ops_utils.cached_tensors = (Tensor **)malloc(2 * sizeof(Tensor *));
     y->grad_a = x;
+    y->ops_utils.cached_tensors = (Tensor **)malloc(2 * sizeof(Tensor *));
     y->ops_utils.cached_tensors[0] = mean;
     y->ops_utils.cached_tensors[1] = var;
+    y->ops_utils.cached_ints = axes_copy;
     y->ops_utils.cached_float = epsilon;
+    y->ops_utils.cached_int = num_axes;
 
     return y;
 }

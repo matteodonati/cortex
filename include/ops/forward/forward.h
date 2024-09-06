@@ -26,6 +26,6 @@ Tensor* tensor_mean(Tensor *tensor, int *axes, int num_axes);
 Tensor* tensor_var(Tensor *tensor, int *axes, int num_axes, bool unbiased);
 Tensor* tensor_cat(Tensor *a, Tensor *b, int axis);
 Tensor* im2col(Tensor *input, int kernel_height, int kernel_width, int stride_height, int stride_width, int pad_height, int pad_width);
-Tensor* tensor_normalize2d(Tensor *x, float epsilon, bool is_training, Tensor *mean, Tensor *var);
+Tensor* tensor_normalize2d(Tensor *x, bool is_training, Tensor *mean, Tensor *var, int *axes, int num_axes, float epsilon);
 
 #endif
