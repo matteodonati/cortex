@@ -1,3 +1,4 @@
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 #include "ops/utils/utils.h"
@@ -53,6 +54,81 @@ void adjust_indices_for_broadcasting(Tensor *a, Tensor *b, int *a_index, int *b_
     }
 }
 
+void tensor_extreme(Tensor *tensor, Tensor *result, int axis, bool is_max) 
+{
+    int new_ndim = result->ndim;
+    for (int i = 0; i < result->size; i++) 
+    {
+        result->data[i] = is_max ? -INFINITY : INFINITY;
+    }
+
+    // Perform the max or min operation
+    for (int i = 0; i < tensor->size; i++) 
+    {
+        int result_index = 0;
+        int old_index = i;
+
+        for (int d = tensor->ndim - 1, k = new_ndim - 1; d >= 0; d--) 
+        {
+            if (d == axis) 
+            {
+                continue;
+            }
+            int coord = (old_index / tensor->stride[d]) % tensor->shape[d];
+            result_index += coord * result->stride[k--];
+        }
+
+        if (is_max) 
+        {
+            if (tensor->data[i] > result->data[result_index]) 
+            {
+                result->data[result_index] = tensor->data[i];
+            }
+        } 
+        else 
+        {
+            if (tensor->data[i] < result->data[result_index]) 
+            {
+                result->data[result_index] = tensor->data[i];
+            }
+        }
+    }
+}
+
+void tensor_arg_extreme(Tensor *tensor, Tensor *result, int axis, bool is_argmax) 
+{
+    int new_ndim = result->ndim;
+
+    for (int i = 0; i < result->size; i++) 
+    {
+        result->data[i] = -1;
+    }
+
+    // Perform the argmax or argmin operation
+    for (int i = 0; i < tensor->size; i++) 
+    {
+        int result_index = 0;
+        int old_index = i;
+
+        for (int d = tensor->ndim - 1, k = new_ndim - 1; d >= 0; d--) 
+        {
+            if (d == axis) 
+            {
+                continue;
+            }
+            int coord = (old_index / tensor->stride[d]) % tensor->shape[d];
+            result_index += coord * result->stride[k--];
+        }
+
+        if (result->data[result_index] == -1 || 
+            ( is_argmax && tensor->data[i] > tensor->data[(int)result->data[result_index] * tensor->stride[axis] + old_index % tensor->stride[axis]]) ||
+            (!is_argmax && tensor->data[i] < tensor->data[(int)result->data[result_index] * tensor->stride[axis] + old_index % tensor->stride[axis]]))
+        {
+            result->data[result_index] = old_index / tensor->stride[axis] % tensor->shape[axis];
+        }
+    }
+}
+
 void compute_reduce_mask_and_divisor(Tensor *tensor, int *axes, int num_axes, int *reduce_mask, int *divisor)
 {
     *divisor = 1;
@@ -65,6 +141,30 @@ void compute_reduce_mask_and_divisor(Tensor *tensor, int *axes, int num_axes, in
     {
         reduce_mask[axes[i]] = 1;
         *divisor *= tensor->shape[axes[i]];
+    }
+}
+
+void tensor_reduce(Tensor *tensor, Tensor *result, int *reduce_mask) 
+{
+    int new_ndim = result->ndim;
+
+    // Perform the sum operation over the specified axes
+    for (int i = 0; i < tensor->size; i++) 
+    {
+        int result_index = 0;
+        int old_index = i;
+
+        for (int d = tensor->ndim - 1, k = new_ndim - 1; d >= 0; d--) 
+        {
+            if (reduce_mask[d]) 
+            {
+                continue;
+            }
+            int coord = (old_index / tensor->stride[d]) % tensor->shape[d];
+            result_index += coord * result->stride[k--];
+        }
+
+        result->data[result_index] += tensor->data[i];
     }
 }
 

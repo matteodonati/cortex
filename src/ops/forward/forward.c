@@ -397,36 +397,7 @@ Tensor* tensor_max(Tensor *tensor, int axis)
     }
 
     Tensor *result = tensor_zeros(NULL, new_shape, new_ndim);
-
-    // Initialize the result tensor data with negative infinity
-    for (int i = 0; i < result->size; i++) 
-    {
-        result->data[i] = -INFINITY;
-    }
-
-    // Perform the max operation
-    for (int i = 0; i < tensor->size; i++) 
-    {
-        int result_index = 0;
-        int old_index = i;
-
-        // Compute the index for the result tensor excluding the axis dimension
-        for (int d = tensor->ndim - 1, k = new_ndim - 1; d >= 0; d--) 
-        {
-            if (d == axis) 
-            {
-                continue;
-            }
-            int coord = (old_index / tensor->stride[d]) % tensor->shape[d];
-            result_index += coord * result->stride[k--];
-        }
-
-        // Update the result data
-        if (tensor->data[i] > result->data[result_index]) 
-        {
-            result->data[result_index] = tensor->data[i];
-        }
-    }
+    tensor_extreme(tensor, result, axis, true);
 
     result->ops_utils.cached_int = axis;
     result->backward = &tensor_max_min_backward;
@@ -455,36 +426,7 @@ Tensor* tensor_min(Tensor *tensor, int axis)
     }
 
     Tensor *result = tensor_zeros(NULL, new_shape, new_ndim);
-
-    // Initialize the result tensor data with positive infinity
-    for (int i = 0; i < result->size; i++) 
-    {
-        result->data[i] = INFINITY;
-    }
-
-    // Perform the min operation
-    for (int i = 0; i < tensor->size; i++) 
-    {
-        int result_index = 0;
-        int old_index = i;
-
-        // Compute the index for the result tensor excluding the axis dimension
-        for (int d = tensor->ndim - 1, k = new_ndim - 1; d >= 0; d--) 
-        {
-            if (d == axis)
-            {
-                continue;
-            }
-            int coord = (old_index / tensor->stride[d]) % tensor->shape[d];
-            result_index += coord * result->stride[k--];
-        }
-
-        // Update the result data
-        if (tensor->data[i] < result->data[result_index]) 
-        {
-            result->data[result_index] = tensor->data[i];
-        }
-    }
+    tensor_extreme(tensor, result, axis, false);
 
     result->ops_utils.cached_int = axis;
     result->backward = &tensor_max_min_backward;
@@ -506,41 +448,13 @@ Tensor* tensor_argmax(Tensor *tensor, int axis)
 
     for (int i = 0, j = 0; i < tensor->ndim; i++) 
     {
-        if (i != axis) 
-        {
+        if (i != axis) {
             new_shape[j++] = tensor->shape[i];
         }
     }
 
     Tensor *result = tensor_zeros(NULL, new_shape, new_ndim);
-
-    // Initialize the result tensor data with -1 (invalid index)
-    for (int i = 0; i < result->size; i++) 
-    {
-        result->data[i] = -1;
-    }
-
-    // Perform the argmax operation
-    for (int i = 0; i < tensor->size; i++) 
-    {
-        int result_index = 0;
-        int old_index = i;
-
-        for (int d = tensor->ndim - 1, k = new_ndim - 1; d >= 0; d--) 
-        {
-            if (d == axis) 
-            {
-                continue;
-            }
-            int coord = (old_index / tensor->stride[d]) % tensor->shape[d];
-            result_index += coord * result->stride[k--];
-        }
-
-        if (result->data[result_index] == -1 || tensor->data[i] > tensor->data[(int)result->data[result_index] * tensor->stride[axis] + old_index % tensor->stride[axis]]) 
-        {
-            result->data[result_index] = old_index / tensor->stride[axis] % tensor->shape[axis];
-        }
-    }
+    tensor_arg_extreme(tensor, result, axis, true);
 
     return result;
 }
@@ -565,34 +479,7 @@ Tensor* tensor_argmin(Tensor *tensor, int axis)
     }
 
     Tensor *result = tensor_zeros(NULL, new_shape, new_ndim);
-
-    // Initialize the result tensor data with -1 (invalid index)
-    for (int i = 0; i < result->size; i++) 
-    {
-        result->data[i] = -1;
-    }
-
-    // Perform the argmin operation
-    for (int i = 0; i < tensor->size; i++) 
-    {
-        int result_index = 0;
-        int old_index = i;
-
-        for (int d = tensor->ndim - 1, k = new_ndim - 1; d >= 0; d--) 
-        {
-            if (d == axis) 
-            {
-                continue;
-            }
-            int coord = (old_index / tensor->stride[d]) % tensor->shape[d];
-            result_index += coord * result->stride[k--];
-        }
-
-        if (result->data[result_index] == -1 || tensor->data[i] < tensor->data[(int)result->data[result_index] * tensor->stride[axis] + old_index % tensor->stride[axis]]) 
-        {
-            result->data[result_index] = old_index / tensor->stride[axis] % tensor->shape[axis];
-        }
-    }
+    tensor_arg_extreme(tensor, result, axis, false);
 
     return result;
 }
@@ -608,21 +495,14 @@ Tensor* tensor_sum(Tensor *tensor, int *axes, int num_axes)
     int new_ndim = tensor->ndim - num_axes;
     int new_shape[new_ndim];
 
-    // Determine which axes are not being summed over
-    int sum_mask[tensor->ndim];
-    for (int i = 0; i < tensor->ndim; i++) 
-    {
-        sum_mask[i] = 0;
-    }
-    for (int i = 0; i < num_axes; i++) 
-    {
-        sum_mask[axes[i]] = 1;
-    }
+    // Determine reduce mask and divisor (divisor is not used for sum)
+    int reduce_mask[tensor->ndim];
+    int tmp;
+    compute_reduce_mask_and_divisor(tensor, axes, num_axes, reduce_mask, &tmp);
 
-    // Create the new shape
     for (int i = 0, j = 0; i < tensor->ndim; i++) 
     {
-        if (!sum_mask[i]) 
+        if (!reduce_mask[i]) 
         {
             new_shape[j++] = tensor->shape[i];
         }
@@ -630,24 +510,8 @@ Tensor* tensor_sum(Tensor *tensor, int *axes, int num_axes)
 
     Tensor *result = tensor_zeros(NULL, new_shape, new_ndim);
 
-    // Perform the sum operation over the specified axes
-    for (int i = 0; i < tensor->size; i++) 
-    {
-        int result_index = 0;
-        int old_index = i;
-
-        for (int d = tensor->ndim - 1, k = new_ndim - 1; d >= 0; d--) 
-        {
-            if (sum_mask[d]) 
-            {
-                continue;
-            }
-            int coord = (old_index / tensor->stride[d]) % tensor->shape[d];
-            result_index += coord * result->stride[k--];
-        }
-
-        result->data[result_index] += tensor->data[i];
-    }
+    // Perform the summing operation
+    tensor_reduce(tensor, result, reduce_mask);
 
     int *axes_copy = (int*)malloc(num_axes * sizeof(int));
     memcpy(axes_copy, axes, num_axes * sizeof(int));
@@ -671,21 +535,15 @@ Tensor* tensor_mean(Tensor *tensor, int *axes, int num_axes)
     int new_ndim = tensor->ndim - num_axes;
     int new_shape[new_ndim];
 
-    // Determine which axes are being averaged over
-    int sum_mask[tensor->ndim];
-    for (int i = 0; i < tensor->ndim; i++) 
-    {
-        sum_mask[i] = 0;
-    }
-    for (int i = 0; i < num_axes; i++) 
-    {
-        sum_mask[axes[i]] = 1;
-    }
+    // Determine reduce mask and divisor
+    int reduce_mask[tensor->ndim];
+    int divisor;
+    compute_reduce_mask_and_divisor(tensor, axes, num_axes, reduce_mask, &divisor);
 
-    // Create the new shape
+    // Create the new shape for the result tensor
     for (int i = 0, j = 0; i < tensor->ndim; i++) 
     {
-        if (!sum_mask[i]) 
+        if (!reduce_mask[i]) 
         {
             new_shape[j++] = tensor->shape[i];
         }
@@ -693,33 +551,10 @@ Tensor* tensor_mean(Tensor *tensor, int *axes, int num_axes)
 
     Tensor *result = tensor_zeros(NULL, new_shape, new_ndim);
 
-    // Compute the divisor by multiplying sizes of all axes over which the mean is being taken
-    int divisor = 1;
-    for (int i = 0; i < num_axes; i++) 
-    {
-        divisor *= tensor->shape[axes[i]];
-    }
+    // Perform the summing operation
+    tensor_reduce(tensor, result, reduce_mask);
 
-    // Perform the sum operation
-    for (int i = 0; i < tensor->size; i++) 
-    {
-        int result_index = 0;
-        int old_index = i;
-
-        for (int d = tensor->ndim - 1, k = new_ndim - 1; d >= 0; d--) 
-        {
-            if (sum_mask[d]) 
-            {
-                continue;
-            }
-            int coord = (old_index / tensor->stride[d]) % tensor->shape[d];
-            result_index += coord * result->stride[k--];
-        }
-
-        result->data[result_index] += tensor->data[i];
-    }
-
-    // Divide by the divisor to get the mean
+    // Divide by the divisor
     for (int i = 0; i < result->size; i++) 
     {
         result->data[i] /= divisor;
@@ -747,18 +582,15 @@ Tensor* tensor_var(Tensor *tensor, int *axes, int num_axes, bool unbiased)
     int new_ndim = tensor->ndim - num_axes;
     int new_shape[new_ndim];
 
-    // Determine which axes are being reduced
+    // Determine reduce mask and divisor
     int reduce_mask[tensor->ndim];
-    for (int i = 0; i < tensor->ndim; i++) 
-    {
-        reduce_mask[i] = 0;
-    }
-    for (int i = 0; i < num_axes; i++) 
-    {
-        reduce_mask[axes[i]] = 1;
-    }
+    int divisor;
+    compute_reduce_mask_and_divisor(tensor, axes, num_axes, reduce_mask, &divisor);
 
-    // Create the new shape after reduction
+    // Adjust for unbiased variance if necessary
+    int unbiased_divisor = unbiased ? divisor - 1 : divisor;
+
+    // Create the new shape for the result tensor
     for (int i = 0, j = 0; i < tensor->ndim; i++) 
     {
         if (!reduce_mask[i]) 
@@ -768,41 +600,16 @@ Tensor* tensor_var(Tensor *tensor, int *axes, int num_axes, bool unbiased)
     }
 
     Tensor *result = tensor_zeros(NULL, new_shape, new_ndim);
-    float *mean = (float*)calloc(result->size, sizeof(float));
+    Tensor *mean = tensor_zeros(NULL, new_shape, new_ndim);
 
-    // Compute the divisor by multiplying sizes of all axes over which the variance is being computed
-    int divisor = 1;
-    for (int i = 0; i < num_axes; i++) 
-    {
-        divisor *= tensor->shape[axes[i]];
-    }
-
-    // Compute the mean manually
-    for (int i = 0; i < tensor->size; i++) 
-    {
-        int mean_index = 0;
-        int old_index = i;
-
-        for (int d = tensor->ndim - 1, k = new_ndim - 1; d >= 0; d--) 
-        {
-            if (reduce_mask[d]) 
-            {
-                continue;
-            }
-            int coord = (old_index / tensor->stride[d]) % tensor->shape[d];
-            mean_index += coord * result->stride[k--];
-        }
-
-        mean[mean_index] += tensor->data[i];
-    }
-
-    // Divide by the divisor to get the mean
+    // Compute the mean
+    tensor_reduce(tensor, mean, reduce_mask);
     for (int i = 0; i < result->size; i++) 
     {
-        mean[i] /= divisor;
+        mean->data[i] /= divisor;
     }
 
-    // Calculate the variance
+    // Compute the variance
     for (int i = 0; i < tensor->size; i++) 
     {
         int var_index = 0;
@@ -817,20 +624,20 @@ Tensor* tensor_var(Tensor *tensor, int *axes, int num_axes, bool unbiased)
             int coord = (old_index / tensor->stride[d]) % tensor->shape[d];
             var_index += coord * result->stride[k--];
         }
-
-        double diff = tensor->data[i] - mean[var_index];
+        float diff = tensor->data[i] - mean->data[var_index];
         result->data[var_index] += diff * diff;
     }
 
-    free(mean);
+    // Free mean
+    tensor_free(mean);
 
-    // Divide by divisor (for unbiased, use divisor - 1)
-    divisor = unbiased ? divisor - 1 : divisor;
+    // Divide by the unbiased divisor to compute variance
     for (int i = 0; i < result->size; i++) 
     {
-        result->data[i] /= divisor;
+        result->data[i] /= unbiased_divisor;
     }
 
+    // Cache axes for backward pass
     int *axes_copy = (int*)malloc(num_axes * sizeof(int));
     memcpy(axes_copy, axes, num_axes * sizeof(int));
 

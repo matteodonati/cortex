@@ -133,7 +133,6 @@ void tensor_ops()
     print_tensor(sum_result, "sum");
     print_tensor(mean_result, "mean");
     print_tensor(var_result, "var_result");
-    print_tensor(cat_result, "cat_result");
 
     // Free all tensors
     tensor_free(a);
