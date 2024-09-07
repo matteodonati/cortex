@@ -7,11 +7,11 @@
 typedef struct DataLoader
 {
     Dataset *dataset;
+    int *indices;
     int batch_size;
     int num_batches;
-    int *indices;
-    bool shuffle;
     int current_batch;
+    bool shuffle;
 } DataLoader;
 
 DataLoader* dataloader_create(Dataset *dataset, int batch_size, bool shuffle);

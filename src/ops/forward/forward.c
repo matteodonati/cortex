@@ -279,7 +279,7 @@ Tensor* tensor_matmul(Tensor *a, Tensor *b)
     int out_ndim = (a_ndim > b_ndim) ? a_ndim : b_ndim;
 
     // Output shape
-    int *out_shape = (int*)malloc(out_ndim * sizeof(int));
+    int out_shape[out_ndim];
     for (int i = 0; i < out_ndim - 2; i++) 
     {
         out_shape[i] = (a->ndim >= b->ndim) ? a->shape[i] : b->shape[i];
@@ -313,8 +313,6 @@ Tensor* tensor_matmul(Tensor *a, Tensor *b)
     result->grad_a = a;
     result->grad_b = b;
 
-    free(out_shape);
-
     return result;
 }
 
@@ -345,6 +343,7 @@ Tensor* tensor_transpose(Tensor *tensor, int *axes)
 
     Tensor *result = tensor_zeros(NULL, tensor->shape, tensor->ndim);
     result->ops_utils.cached_ints = (int *)malloc(result->ndim * sizeof(int));
+
     for (int i = 0; i < result->ndim; i++) 
     {
         result->shape[i] = tensor->shape[axes[i]];
@@ -496,8 +495,8 @@ Tensor* tensor_sum(Tensor *tensor, int *axes, int num_axes)
     int new_shape[new_ndim];
 
     // Determine reduce mask and divisor (divisor is not used for sum)
-    int reduce_mask[tensor->ndim];
     int tmp;
+    int reduce_mask[tensor->ndim];
     compute_reduce_mask_and_divisor(tensor, axes, num_axes, reduce_mask, &tmp);
 
     for (int i = 0, j = 0; i < tensor->ndim; i++) 
@@ -536,8 +535,8 @@ Tensor* tensor_mean(Tensor *tensor, int *axes, int num_axes)
     int new_shape[new_ndim];
 
     // Determine reduce mask and divisor
-    int reduce_mask[tensor->ndim];
     int divisor;
+    int reduce_mask[tensor->ndim];
     compute_reduce_mask_and_divisor(tensor, axes, num_axes, reduce_mask, &divisor);
 
     // Create the new shape for the result tensor
@@ -583,8 +582,8 @@ Tensor* tensor_var(Tensor *tensor, int *axes, int num_axes, bool unbiased)
     int new_shape[new_ndim];
 
     // Determine reduce mask and divisor
-    int reduce_mask[tensor->ndim];
     int divisor;
+    int reduce_mask[tensor->ndim];
     compute_reduce_mask_and_divisor(tensor, axes, num_axes, reduce_mask, &divisor);
 
     // Adjust for unbiased variance if necessary

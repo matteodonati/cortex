@@ -8,13 +8,6 @@
 Layer* avgpool2d_create(const char *name, int kernel_size[2], int stride[2], int padding[2]) 
 {
     AvgPool2D *pool = (AvgPool2D *)malloc(sizeof(AvgPool2D));
-
-    pool->kernel_size[0] = kernel_size[0];
-    pool->kernel_size[1] = kernel_size[1];
-    pool->stride[0] = stride[0];
-    pool->stride[1] = stride[1];
-    pool->padding[0] = padding[0];
-    pool->padding[1] = padding[1];
     pool->base.name = NULL;
     if (name) 
     {
@@ -26,7 +19,12 @@ Layer* avgpool2d_create(const char *name, int kernel_size[2], int stride[2], int
     pool->base.is_training = false;
     pool->base.forward = &avgpool2d_forward;
     pool->base.free = &avgpool2d_free;
-
+    pool->kernel_size[0] = kernel_size[0];
+    pool->kernel_size[1] = kernel_size[1];
+    pool->stride[0] = stride[0];
+    pool->stride[1] = stride[1];
+    pool->padding[0] = padding[0];
+    pool->padding[1] = padding[1];
     return (Layer *)pool;
 }
 
@@ -53,28 +51,34 @@ Tensor* avgpool2d_forward(Layer *self, Tensor *x)
     int output_width = (input_width + 2 * pad_width - kernel_width) / stride_width + 1;
 
     // im2col transformation of input tensor. Shape: {batch_size, in_channels * kernel_height * kernel_width, output_height * output_width}
-    Tensor *input_col = im2col(x, kernel_height, kernel_width, stride_height, stride_width, pad_height, pad_width);
+    Tensor *ic = im2col(x, kernel_height, kernel_width, stride_height, stride_width, pad_height, pad_width);
 
     // Reshape input_col to {batch_size, in_channels, kernel_height * kernel_width, output_height * output_width}
-    Tensor *input_col_reshaped = tensor_reshape(input_col, (int[]){batch_size, in_channels, kernel_height * kernel_width, output_height * output_width}, 4);
+    int ir_ndim = 4;
+    int ir_shape[] = {batch_size, in_channels, kernel_height * kernel_width, output_height * output_width};
+    Tensor *ir = tensor_reshape(ic, ir_shape, ir_ndim);
 
     // Perform mean operation along the kernel size axis (axis 2)
-    Tensor *output_col = tensor_mean(input_col_reshaped, (int []){2}, 1);
+    int mean_num_axes = 1;
+    int mean_axes[] = {2};
+    Tensor *oc = tensor_mean(ir, mean_axes, mean_num_axes);
 
     // Reshape the output back to {batch_size, in_channels, output_height, output_width}
-    Tensor *output_reshaped = tensor_reshape(output_col, (int[]){batch_size, in_channels, output_height, output_width}, 4);
+    int or_ndim = 4;
+    int or_shape[] = {batch_size, in_channels, output_height, output_width};
+    Tensor *or = tensor_reshape(oc, or_shape, or_ndim);
 
-    // Store intermediate results for backpropagation
+    // Pointers to intermediate results
     self->input = x;
     self->tensor_count = 4;
     self->tensors = (Tensor **)malloc(self->tensor_count * sizeof(Tensor *));
-    self->tensors[0] = input_col;
-    self->tensors[1] = input_col_reshaped;
-    self->tensors[2] = output_col;
-    self->tensors[3] = output_reshaped;
-    self->output = output_reshaped;
+    self->tensors[0] = ic;
+    self->tensors[1] = ir;
+    self->tensors[2] = oc;
+    self->tensors[3] = or;
+    self->output = or;
 
-    return output_reshaped;
+    return or;
 }
 
 void avgpool2d_free(Layer *self) 

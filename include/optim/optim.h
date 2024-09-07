@@ -9,10 +9,10 @@
 
 typedef struct Optimizer 
 {
-    float learning_rate;
-    int optim_type;
     void (*step)(struct Optimizer *self, Tensor **params, int num_params);
     void (*free)(struct Optimizer *self);
+    float learning_rate;
+    int optim_type;
 } Optimizer;
 
 void optimizer_step(Optimizer *optim, Tensor **params, int num_params);

@@ -6,8 +6,8 @@ Model* model_create(Layer **layers, int num_layers)
 {
     Model *model = (Model *)malloc(sizeof(Model));
     model->layers = layers;
-    model->num_layers = num_layers;
     model->params = NULL;
+    model->num_layers = num_layers;
     model->num_params = 0;
 
     // Collect all parameters from the layers

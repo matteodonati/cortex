@@ -19,7 +19,7 @@ void sigmoid_backward(Tensor *self)
     Tensor *tensor = self->grad_a;
     for (int i = 0; i < self->size; i++) 
     {
-        float sigmoid_val = 1.0 / (1.0 + exp(-tensor->data[i]));
+        float sigmoid_val = 1.0 / (1.0 + expf(-tensor->data[i]));
         tensor->grad[i] += self->grad[i] * sigmoid_val * (1.0 - sigmoid_val);
     }
 
@@ -31,7 +31,7 @@ void tanh_backward(Tensor *self)
     Tensor *tensor = self->grad_a;
     for (int i = 0; i < self->size; i++) 
     {
-        float tanh_val = tanh(tensor->data[i]);
+        float tanh_val = tanhf(tensor->data[i]);
         tensor->grad[i] += self->grad[i] * (1.0 - tanh_val * tanh_val);
     }
 
@@ -55,7 +55,7 @@ void elu_backward(Tensor *self)
     float alpha = self->ops_utils.cached_float;
     for (int i = 0; i < self->size; i++) 
     {
-        tensor->grad[i] += tensor->data[i] > 0 ? self->grad[i] : alpha * exp(tensor->data[i]) * self->grad[i];
+        tensor->grad[i] += tensor->data[i] > 0 ? self->grad[i] : alpha * expf(tensor->data[i]) * self->grad[i];
     }
     backward(tensor);
 }
@@ -66,8 +66,8 @@ void gelu_backward(Tensor *self)
     for (int i = 0; i < self->size; i++) 
     {
         float x = tensor->data[i];
-        float tanh_out = tanh(sqrt(2 / M_PI) * (x + 0.044715 * pow(x, 3)));
-        float gelu_grad = 0.5 * tanh_out + (0.5 * x * (1 - tanh_out * tanh_out) * (sqrt(2 / M_PI) * (1 + 3 * 0.044715 * pow(x, 2))));
+        float tanh_out = tanhf(sqrtf(2 / M_PI) * (x + 0.044715 * powf(x, 3)));
+        float gelu_grad = 0.5 * tanh_out + (0.5 * x * (1 - tanh_out * tanh_out) * (sqrtf(2 / M_PI) * (1 + 3 * 0.044715 * powf(x, 2))));
         tensor->grad[i] += gelu_grad * self->grad[i];
     }
     backward(tensor);
@@ -76,13 +76,10 @@ void gelu_backward(Tensor *self)
 void softmax_backward(Tensor *self) 
 {
     Tensor *input_tensor = self->grad_a;
-    int axis = self->ops_utils.cached_int;
-
-    // Retrieve the cached softmax output from the forward pass
     Tensor *softmax_output = input_tensor->ops_utils.cached_tensor;
-
     int outer_size = 1;
     int inner_size = 1;
+    int axis = self->ops_utils.cached_int;
     int axis_size = input_tensor->shape[axis];
 
     // Calculate the outer and inner sizes for the loop structure

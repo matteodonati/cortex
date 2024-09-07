@@ -8,15 +8,21 @@ Parameters* conv2d_parameters_create(const char *name, int in_channels, int out_
 {
     Conv2DParameters *params = (Conv2DParameters *)malloc(sizeof(Conv2DParameters));
 
-    float limit = sqrtf(1 / (float)(in_channels * kernel_size[0] * kernel_size[1]));
-
     char weights_name[256];
     snprintf(weights_name, sizeof(weights_name), "%s.weight", name);
-    params->weights = tensor_rand(weights_name, (int[]){out_channels, in_channels / 1, kernel_size[0], kernel_size[1]}, 4, limit);
 
     char bias_name[256];
     snprintf(bias_name, sizeof(bias_name), "%s.bias", name);
-    params->bias = tensor_rand(bias_name, (int[]){out_channels}, 1, limit);
+
+    float limit = sqrtf(1 / (float)(in_channels * kernel_size[0] * kernel_size[1]));
+
+    int weights_ndim = 4;
+    int weights_shape[] = {out_channels, in_channels / 1, kernel_size[0], kernel_size[1]};
+    params->weights = tensor_rand(weights_name, weights_shape, weights_ndim, limit);
+
+    int bias_ndim = 1;
+    int bias_shape[] = {out_channels};
+    params->bias = tensor_rand(bias_name, bias_shape, bias_ndim, limit);
 
     params->base.get_params = &conv2d_get_params;
     params->base.num_params = 2;

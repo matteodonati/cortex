@@ -210,7 +210,7 @@ void backward(Tensor *tensor)
 
 Tensor* one_hot_encode(Tensor *labels, int num_classes) 
 {
-    int *new_shape = (int *)malloc((labels->ndim + 1) * sizeof(int));
+    int new_shape[labels->ndim + 1];
     memcpy(new_shape, labels->shape, labels->ndim * sizeof(int));
     new_shape[labels->ndim] = num_classes;
 
@@ -221,6 +221,5 @@ Tensor* one_hot_encode(Tensor *labels, int num_classes)
         one_hot->data[i * num_classes + class_index] = 1.0;
     }
 
-    free(new_shape);
     return one_hot;
 }

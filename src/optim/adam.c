@@ -9,13 +9,13 @@ Optimizer* adam_create(float learning_rate, float beta1, float beta2, float epsi
     optimizer->base.optim_type = OPTIM_TYPE_ADAM;
     optimizer->base.step = &adam_step;
     optimizer->base.free = &adam_free;
-    optimizer->t = 0;
+    optimizer->m = NULL;
+    optimizer->v = NULL;
     optimizer->beta1 = beta1;
     optimizer->beta2 = beta2;
     optimizer->epsilon = epsilon;
     optimizer->num_params = 0;
-    optimizer->m = NULL;
-    optimizer->v = NULL;
+    optimizer->t = 0;    
     return (Optimizer *)optimizer;
 }
 
@@ -24,23 +24,12 @@ void adam_step(Optimizer *self, Tensor **params, int num_params)
     Adam *adam = (Adam *)self;
     adam->t += 1;
 
-    // Initialize m and v if not done already or if the number of parameters has changed
-    if (adam->m == NULL || adam->num_params != num_params) 
+    if (adam->m == NULL) 
     {
-        if (adam->m != NULL) 
-        {
-            for (int i = 0; i < adam->num_params; i++) 
-            {
-                tensor_free(adam->m[i]);
-                tensor_free(adam->v[i]);
-            }
-            free(adam->m);
-            free(adam->v);
-        }
-        
-        adam->num_params = num_params;
         adam->m = (Tensor **)malloc(num_params * sizeof(Tensor *));
         adam->v = (Tensor **)malloc(num_params * sizeof(Tensor *));
+        adam->num_params = num_params;
+
         for (int i = 0; i < num_params; i++) 
         {
             adam->m[i] = tensor_zeros(NULL, params[i]->shape, params[i]->ndim);
@@ -48,7 +37,6 @@ void adam_step(Optimizer *self, Tensor **params, int num_params)
         }
     }
 
-    // Update
     for (int i = 0; i < num_params; i++) 
     {
         Tensor *param = params[i];

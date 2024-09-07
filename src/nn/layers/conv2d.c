@@ -10,15 +10,14 @@
 Layer *conv2d_create(const char *name, int in_channels, int out_channels, int kernel_size[2], int stride[2], int padding[2]) 
 {
     Conv2D *conv2d = (Conv2D *)malloc(sizeof(Conv2D));
-
-    conv2d->in_channels = in_channels;
-    conv2d->out_channels = out_channels;
     conv2d->kernel_size[0] = kernel_size[0];
     conv2d->kernel_size[1] = kernel_size[1];
     conv2d->stride[0] = stride[0];
     conv2d->stride[1] = stride[1];
     conv2d->padding[0] = padding[0];
     conv2d->padding[1] = padding[1];
+    conv2d->in_channels = in_channels;
+    conv2d->out_channels = out_channels;
     conv2d->groups = 1; // groups greater than one is not supported for now
     conv2d->base.name = NULL;
     if (name) 
@@ -26,13 +25,11 @@ Layer *conv2d_create(const char *name, int in_channels, int out_channels, int ke
         conv2d->base.name = (char *)malloc((strlen(name) + 1) * sizeof(char));
         strcpy(conv2d->base.name, name);
     }
-
     conv2d->base.layer_type = LAYER_TYPE_CONV2D;
     conv2d->base.params = conv2d_parameters_create(name, in_channels, out_channels, kernel_size);
     conv2d->base.is_training = false;
     conv2d->base.forward = &conv2d_forward;
     conv2d->base.free = &conv2d_free;
-
     return (Layer *)conv2d;
 }
 
@@ -61,36 +58,42 @@ Tensor* conv2d_forward(Layer *self, Tensor *x)
     int output_width = (input_width + 2 * pad_width - kernel_width) / stride_width + 1;
 
     // im2col transformation of input tensor. Resulting shape: {batch_size, in_channels * kernel_height * kernel_width, output_height * output_width}
-    Tensor *input_col = im2col(x, kernel_height, kernel_width, stride_height, stride_width, pad_height, pad_width);
+    Tensor *ic = im2col(x, kernel_height, kernel_width, stride_height, stride_width, pad_height, pad_width);
 
     // Reshape kernel to 2D for matmul. Shape: {out_channels, in_channels * kernel_height * kernel_width}
-    Tensor *kernel_reshaped = tensor_reshape(params->weights, (int[]){out_channels, in_channels * kernel_height * kernel_width}, 2);
+    int kr_ndim = 2;
+    int kr_shape[] = {out_channels, in_channels * kernel_height * kernel_width};
+    Tensor *kr = tensor_reshape(params->weights, kr_shape, kr_ndim);
 
     // Perform matrix multiplication. Shape: {batch_size, out_channels, output_height * output_width}
-    Tensor *output_flat = tensor_matmul(kernel_reshaped, input_col);
+    Tensor *of = tensor_matmul(kr, ic);
 
     // Reshape bias. Shape {1, out_channels, 1}
-    Tensor *bias_reshaped = tensor_reshape(params->bias, (int[]){1, out_channels, 1}, 3);
+    int br_ndim = 3;
+    int br_shape[] = {1, out_channels, 1};
+    Tensor *br = tensor_reshape(params->bias, br_shape, br_ndim);
 
     // Add bias
-    Tensor *output_with_bias = tensor_add(output_flat, bias_reshaped);
+    Tensor *ob = tensor_add(of, br);
 
     // Reshape output to desired shape: {batch_size, out_channels, output_height, output_width}
-    Tensor *output_reshaped = tensor_reshape(output_with_bias, (int[]){batch_size, out_channels, output_height, output_width}, 4);
+    int or_ndim = 4;
+    int or_shape[] = {batch_size, out_channels, output_height, output_width};
+    Tensor *or = tensor_reshape(ob, or_shape, or_ndim);
 
-    // Set pointers to intermediate results
+    // Pointers to intermediate results
     self->input = x;
     self->tensor_count = 6;
     self->tensors = (Tensor **)malloc(self->tensor_count * sizeof(Tensor *));
-    self->tensors[0] = input_col;
-    self->tensors[1] = kernel_reshaped;
-    self->tensors[2] = output_flat;
-    self->tensors[3] = bias_reshaped;
-    self->tensors[4] = output_with_bias;
-    self->tensors[5] = output_reshaped;
-    self->output = output_reshaped;
+    self->tensors[0] = ic;
+    self->tensors[1] = kr;
+    self->tensors[2] = of;
+    self->tensors[3] = br;
+    self->tensors[4] = ob;
+    self->tensors[5] = or;
+    self->output = or;
 
-    return output_reshaped;
+    return or;
 }
 
 void conv2d_free(Layer *self) 

@@ -6,13 +6,13 @@
 typedef struct Adam
 {
     Optimizer base;
-    int t;
+    Tensor **m;
+    Tensor **v;
     float beta1;
     float beta2;
     float epsilon;
     int num_params;
-    Tensor **m;
-    Tensor **v;
+    int t;
 } Adam;
 
 Optimizer* adam_create(float learning_rate, float beta1, float beta2, float epsilon);

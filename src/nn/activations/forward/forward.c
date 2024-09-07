@@ -34,7 +34,7 @@ Tensor* sigmoid_f(Tensor *tensor)
     Tensor *result = tensor_like(NULL, tensor);
     for (int i = 0; i < tensor->size; i++) 
     {
-        result->data[i] = 1.0 / (1.0 + exp(-tensor->data[i]));
+        result->data[i] = 1.0 / (1.0 + expf(-tensor->data[i]));
     }
     result->backward = &sigmoid_backward;
     result->grad_a = tensor;
@@ -52,7 +52,7 @@ Tensor* tanh_f(Tensor *tensor)
     Tensor *result = tensor_like(NULL, tensor);
     for (int i = 0; i < tensor->size; i++) 
     {
-        result->data[i] = tanh(tensor->data[i]);
+        result->data[i] = tanhf(tensor->data[i]);
     }
     result->backward = &tanh_backward;
     result->grad_a = tensor;
@@ -89,7 +89,7 @@ Tensor* elu_f(Tensor *tensor, float alpha)
     Tensor *result = tensor_like(NULL, tensor);
     for (int i = 0; i < tensor->size; i++) 
     {
-        result->data[i] = tensor->data[i] > 0 ? tensor->data[i] : alpha * (exp(tensor->data[i]) - 1);
+        result->data[i] = tensor->data[i] > 0 ? tensor->data[i] : alpha * (expf(tensor->data[i]) - 1);
     }
     result->ops_utils.cached_float = alpha;
     result->backward = &elu_backward;
@@ -109,7 +109,7 @@ Tensor* gelu_f(Tensor *tensor)
     for (int i = 0; i < tensor->size; i++) 
     {
         float x = tensor->data[i];
-        result->data[i] = 0.5 * x * (1 + tanh(sqrt(2 / M_PI) * (x + 0.044715 * pow(x, 3))));
+        result->data[i] = 0.5 * x * (1 + tanhf(sqrtf(2 / M_PI) * (x + 0.044715 * powf(x, 3))));
     }
     result->backward = &gelu_backward;
     result->grad_a = tensor;
@@ -166,7 +166,7 @@ Tensor* softmax_f(Tensor *tensor, int axis)
             for (int i = 0; i < axis_size; i++) 
             {
                 int idx = outer * axis_size * inner_size + i * inner_size + inner;
-                result->data[idx] = exp(tensor->data[idx] - max_val);
+                result->data[idx] = expf(tensor->data[idx] - max_val);
                 sum_exp += result->data[idx];
             }
 

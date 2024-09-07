@@ -7,11 +7,11 @@ Dataset* dataset_create(float *x, float *y, int num_samples, int *x_shape, int x
     Dataset *dataset = (Dataset *)malloc(sizeof(Dataset));
     dataset->x = x;
     dataset->y = y;
-    dataset->num_samples = num_samples;
     dataset->x_shape = (int *)malloc(x_ndim * sizeof(int));
     dataset->y_shape = (int *)malloc(y_ndim * sizeof(int));
     memcpy(dataset->x_shape, x_shape, x_ndim * sizeof(int));
     memcpy(dataset->y_shape, y_shape, y_ndim * sizeof(int));
+    dataset->num_samples = num_samples;
     dataset->x_ndim = x_ndim;
     dataset->y_ndim = y_ndim;
     return dataset;

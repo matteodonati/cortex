@@ -10,12 +10,7 @@
 Layer* batchnorm2d_create(const char *name, int num_features, float epsilon, float momentum) 
 {
     BatchNorm2D *bn = (BatchNorm2D *)malloc(sizeof(BatchNorm2D));
-
     bn->num_features = num_features;
-    bn->epsilon = epsilon;
-    bn->momentum = momentum;
-    bn->running_mean = tensor_zeros(NULL, (int[]){num_features}, 1);
-    bn->running_var = tensor_ones(NULL, (int[]){num_features}, 1);
     bn->base.name = NULL;
     if (name) 
     {
@@ -26,7 +21,10 @@ Layer* batchnorm2d_create(const char *name, int num_features, float epsilon, flo
     bn->base.params = batchnorm2d_parameters_create(name, num_features);
     bn->base.forward = &batchnorm2d_forward;
     bn->base.free = &batchnorm2d_free;
-
+    bn->running_mean = tensor_zeros(NULL, (int[]){num_features}, 1);
+    bn->running_var = tensor_ones(NULL, (int[]){num_features}, 1);
+    bn->epsilon = epsilon;
+    bn->momentum = momentum;
     return (Layer *)bn;
 }
 
@@ -42,15 +40,24 @@ Tensor* batchnorm2d_forward(Layer *self, Tensor *x)
     int width = x->shape[3];
     int num_elements = batch_size * height * width;
 
+    // Layer information
+    int normalize_num_axes = 3;
+    int normalize_axes[] = {0, 2, 3};
+
     // Tensors
     Tensor *mean = NULL;
     Tensor *var = NULL;
+    Tensor *xn = NULL;
 
     if (self->is_training) 
     {
-        // Use computed mean and variance during training
-        mean = tensor_zeros(NULL, (int[]){num_features}, 1);
-        var = tensor_zeros(NULL, (int[]){num_features}, 1);
+        int mean_var_ndim = 1;
+        int mean_var_shape[] = {num_features};
+        mean = tensor_zeros(NULL, mean_var_shape, mean_var_ndim);
+        var = tensor_zeros(NULL, mean_var_shape, mean_var_ndim);
+
+        // Normalize using computed mean and variance during training
+        xn = tensor_normalize2d(x, true, mean, var, normalize_axes, normalize_num_axes, bn->epsilon);
 
         // Update running mean and variance using momentum
         for (int c = 0; c < num_features; c++) 
@@ -62,28 +69,28 @@ Tensor* batchnorm2d_forward(Layer *self, Tensor *x)
     } 
     else 
     {
-        // Use running mean and variance during evaluation
+        // Normalize using running mean and variance during evaluation
         mean = tensor_clone(NULL, bn->running_mean);
         var = tensor_clone(NULL, bn->running_var);
+        xn = tensor_normalize2d(x, false, mean, var, normalize_axes, normalize_num_axes, bn->epsilon);
     }
 
-    // Normalize
-    Tensor *normalized_x = tensor_normalize2d(x, self->is_training, mean, var, (int []){0, 2, 3}, 3, bn->epsilon);
-
-    // Scale and shift
-    Tensor *gamma_reshaped = tensor_reshape(params->gamma, (int[]){num_features, 1, 1}, 3);
-    Tensor *beta_reshaped = tensor_reshape(params->beta, (int[]){num_features, 1, 1}, 3);
-    Tensor *scaled_x = tensor_mul(normalized_x, gamma_reshaped);
+    // Scale and shift: y = gamma * normalized_x + beta
+    int gamma_beta_new_ndim = 3;
+    int gamma_beta_new_shape[] = {num_features, 1, 1};
+    Tensor *gamma_reshaped = tensor_reshape(params->gamma, gamma_beta_new_shape, gamma_beta_new_ndim);
+    Tensor *beta_reshaped = tensor_reshape(params->beta, gamma_beta_new_shape, gamma_beta_new_ndim);
+    Tensor *scaled_x = tensor_mul(xn, gamma_reshaped);
     Tensor *y = tensor_add(scaled_x, beta_reshaped);
 
-    // Store intermediate tensors
+    // Pointers to intermediate results
     self->input = x;
     self->output = y;
     self->tensor_count = 7;
     self->tensors = (Tensor **)malloc(self->tensor_count * sizeof(Tensor *));
     self->tensors[0] = mean;
     self->tensors[1] = var;
-    self->tensors[2] = normalized_x;
+    self->tensors[2] = xn;
     self->tensors[3] = gamma_reshaped;
     self->tensors[4] = beta_reshaped;
     self->tensors[5] = scaled_x;

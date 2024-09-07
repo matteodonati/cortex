@@ -19,7 +19,7 @@ void print_tensor_array_recursive(float *data, int *shape, int ndim, int current
                 flat_index += indices[j] * stride;
                 stride *= shape[j];
             }
-            printf("%.2e", data[flat_index]);  // Scientific notation with  digits after the decimal point
+            printf("% .2e", data[flat_index]);  // Scientific notation with  digits after the decimal point
             if (i < shape[current_dim] - 1) 
             {
                 printf(", ");
@@ -61,7 +61,8 @@ void print_tensor(Tensor *tensor, const char *name)
     }
     printf(")\n");
 
-    int *indices = (int *)malloc(tensor->ndim * sizeof(int));
+    int indices[tensor->ndim];
+    
     printf("data:\n");
     if (tensor->data != NULL)
     {
@@ -83,6 +84,4 @@ void print_tensor(Tensor *tensor, const char *name)
         printf("None");
     }
     printf("\n\n");
-
-    free(indices);
 }

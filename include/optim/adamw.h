@@ -6,14 +6,14 @@
 typedef struct AdamW 
 {
     Optimizer base;
-    int t;
-    float beta1;
-    float beta2;
-    float epsilon;
-    int num_params;
-    float weight_decay;
     Tensor **m;
     Tensor **v;
+    float beta1;
+    float beta2;
+    float weight_decay;
+    float epsilon;
+    int num_params;
+    int t;
 } AdamW;
 
 Optimizer* adamw_create(float learning_rate, float beta1, float beta2, float epsilon, float weight_decay);

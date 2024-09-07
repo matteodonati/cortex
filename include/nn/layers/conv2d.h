@@ -3,16 +3,14 @@
 
 #include "nn/layers/layer.h"
 
-#define PADDING_MODE_ZEROS 0
-
 typedef struct Conv2D
 {
     Layer base;
-    int in_channels;
-    int out_channels;
     int kernel_size[2];
     int stride[2];
     int padding[2];
+    int in_channels;
+    int out_channels;
     int groups;
 } Conv2D;
 

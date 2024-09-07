@@ -7,9 +7,9 @@ typedef struct Dataset
 {
     float *x;
     float *y;
-    int num_samples;
     int *x_shape;
     int *y_shape;
+    int num_samples;
     int x_ndim;
     int y_ndim;
 } Dataset;

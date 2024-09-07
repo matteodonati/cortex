@@ -8,13 +8,16 @@ Parameters* batchnorm2d_parameters_create(const char *name, int num_features)
 {
     BatchNorm2DParameters *params = (BatchNorm2DParameters *)malloc(sizeof(BatchNorm2DParameters));
 
+    int gamma_beta_ndim = 1;
+    int gamma_beta_shape[] = {num_features};
+
     char gamma_name[256];
     snprintf(gamma_name, sizeof(gamma_name), "%s.gamma", name);
-    params->gamma = tensor_ones(gamma_name, (int[]){num_features}, 1);  // scale factor, initialized to 1
+    params->gamma = tensor_ones(gamma_name, gamma_beta_shape, gamma_beta_ndim);  // scale factor, initialized to 1
 
     char beta_name[256];
     snprintf(beta_name, sizeof(beta_name), "%s.beta", name);
-    params->beta = tensor_zeros(beta_name, (int[]){num_features}, 1);  // shift factor, initialized to 0
+    params->beta = tensor_zeros(beta_name, gamma_beta_shape, gamma_beta_ndim);  // shift factor, initialized to 0
 
     params->base.get_params = &batchnorm2d_get_params;
     params->base.num_params = 2;

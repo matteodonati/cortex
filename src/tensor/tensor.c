@@ -85,14 +85,14 @@ Tensor* tensor_full(const char *name, int *shape, int ndim, float value)
     return tensor;
 }
 
-Tensor* tensor_clone(const char *name, Tensor *a)
-{
-    return tensor_from_array(name, a->data, a->shape, a->ndim);
-}
-
 Tensor* tensor_like(const char *name, Tensor *a) 
 {
     return initialize_tensor(name, a->shape, a->ndim);
+}
+
+Tensor* tensor_clone(const char *name, Tensor *a)
+{
+    return tensor_from_array(name, a->data, a->shape, a->ndim);
 }
 
 void tensor_free(Tensor *tensor) 

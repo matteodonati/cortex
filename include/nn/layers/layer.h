@@ -17,11 +17,11 @@ typedef struct Layer
     Tensor *input;
     Tensor *output;
     Tensor **tensors;
+    Tensor *(*forward)(struct Layer *self, Tensor *input);
+    void (*free)(struct Layer *self);
     int tensor_count;
     int layer_type;
     bool is_training;
-    Tensor *(*forward)(struct Layer *self, Tensor *input);
-    void (*free)(struct Layer *self);
 } Layer;
 
 Tensor *layer_forward(Layer *self, Tensor *x);

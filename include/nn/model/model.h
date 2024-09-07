@@ -6,8 +6,8 @@
 typedef struct Model 
 {
     Layer **layers;
-    int num_layers;
     Tensor **params;
+    int num_layers;
     int num_params;
 } Model;
 

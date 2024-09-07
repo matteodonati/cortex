@@ -50,8 +50,7 @@ void model_load(Model *model, const char *filename)
         // Read the tensor name
         int name_len;
         fread(&name_len, sizeof(int), 1, file);
-
-        char *name = (char *)malloc((name_len + 1) * sizeof(char));
+        char name[name_len + 1];
         fread(name, sizeof(char), name_len, file);
         name[name_len] = '\0';
 
@@ -69,7 +68,6 @@ void model_load(Model *model, const char *filename)
         if (tensor == NULL) 
         {
             fprintf(stderr, "Error: Tensor %s not found in the model\n", name);
-            free(name);
             fclose(file);
             exit(EXIT_FAILURE);
         }
@@ -80,21 +78,18 @@ void model_load(Model *model, const char *filename)
         if (ndim != tensor->ndim) 
         {
             fprintf(stderr, "Error: Dimension mismatch for tensor %s\n", name);
-            free(name);
             fclose(file);
             exit(EXIT_FAILURE);
         }
 
         // Check the shape
-        int *shape = (int *)malloc(ndim * sizeof(int));
+        int shape[ndim];
         fread(shape, sizeof(int), ndim, file);
         for (int d = 0; d < ndim; d++) 
         {
             if (shape[d] != tensor->shape[d]) 
             {
                 fprintf(stderr, "Error: Shape mismatch for tensor %s\n", name);
-                free(shape);
-                free(name);
                 fclose(file);
                 exit(EXIT_FAILURE);
             }
@@ -102,9 +97,6 @@ void model_load(Model *model, const char *filename)
         
         // Read the tensor data
         fread(tensor->data, sizeof(float), tensor->size, file);
-
-        free(shape);
-        free(name);
     }
     fclose(file);
 }

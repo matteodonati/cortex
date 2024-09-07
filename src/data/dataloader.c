@@ -7,16 +7,15 @@ DataLoader* dataloader_create(Dataset *dataset, int batch_size, bool shuffle)
 {
     DataLoader *loader = (DataLoader *)malloc(sizeof(DataLoader));
     loader->dataset = dataset;
-    loader->batch_size = batch_size;
     loader->num_batches = dataset->num_samples / batch_size;
     loader->indices = (int *)malloc(dataset->num_samples * sizeof(int));
     for (int i = 0; i < dataset->num_samples; i++) 
     {
         loader->indices[i] = i;
     }
-    loader->shuffle = shuffle;
+    loader->batch_size = batch_size;
     loader->current_batch = 0;
-
+    loader->shuffle = shuffle;
     if (shuffle) 
     {
         dataloader_shuffle(loader);
@@ -53,19 +52,14 @@ void dataloader_get_batch(DataLoader *loader, Tensor **xs, Tensor **ys)
     }
 
     // Create tensors for the batch, with appropriate shapes
-    int *x_batch_shape = (int *)malloc((loader->dataset->x_ndim + 1) * sizeof(int));
-    int *y_batch_shape = (int *)malloc((loader->dataset->y_ndim + 1) * sizeof(int));
-
+    int x_batch_shape[loader->dataset->x_ndim + 1];
+    int y_batch_shape[loader->dataset->y_ndim + 1];
     x_batch_shape[0] = loader->batch_size;
     y_batch_shape[0] = loader->batch_size;
     memcpy(x_batch_shape + 1, loader->dataset->x_shape, loader->dataset->x_ndim * sizeof(int));
     memcpy(y_batch_shape + 1, loader->dataset->y_shape, loader->dataset->y_ndim * sizeof(int));
-
     Tensor *tmp_xs = tensor_zeros(NULL, x_batch_shape, loader->dataset->x_ndim + 1);
     Tensor *tmp_ys = tensor_zeros(NULL, y_batch_shape, loader->dataset->y_ndim + 1);
-
-    free(x_batch_shape);
-    free(y_batch_shape);
 
     // Fill the batch tensors with the data
     for (int i = 0; i < loader->batch_size; i++) 
@@ -77,12 +71,11 @@ void dataloader_get_batch(DataLoader *loader, Tensor **xs, Tensor **ys)
         int slice_size_x = x->size;
         int offset_x = i * slice_size_x;
         memcpy(&tmp_xs->data[offset_x], x->data, slice_size_x * sizeof(float));
+        tensor_free(x);
 
         int slice_size_y = y->size;
         int offset_y = i * slice_size_y;
         memcpy(&tmp_ys->data[offset_y], y->data, slice_size_y * sizeof(float));
-
-        tensor_free(x);
         tensor_free(y);
     }
 

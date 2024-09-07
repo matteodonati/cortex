@@ -6,11 +6,11 @@
 typedef struct BatchNorm2D 
 {
     Layer base;
-    int num_features;
-    float epsilon;
-    float momentum;
     Tensor *running_mean;
     Tensor *running_var;
+    float epsilon;
+    float momentum;
+    int num_features;
 } BatchNorm2D;
 
 Layer* batchnorm2d_create(const char *name, int num_features, float epsilon, float momentum);

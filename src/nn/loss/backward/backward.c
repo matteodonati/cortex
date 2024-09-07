@@ -28,7 +28,7 @@ void cross_entropy_loss_backward(Tensor *loss)
     {
         int class_index = (int)y_true->data[i];
         int idx = i * num_classes + class_index;
-        y_pred->grad[idx] += -1.0 / (y_pred->data[idx] + 1e-9) * loss->grad[0]; // Adding epsilon for numerical instability
+        y_pred->grad[idx] += -1.0 / (y_pred->data[idx] + 1e-9) * loss->grad[0];
         y_pred->grad[idx] /= batch_size;
     }
 

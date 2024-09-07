@@ -1,5 +1,5 @@
-#include <stdlib.h>
 #include <math.h>
+#include <stdlib.h>
 #include "optim/adamw.h"
 
 Optimizer* adamw_create(float learning_rate, float beta1, float beta2, float epsilon, float weight_decay) 
@@ -9,20 +9,22 @@ Optimizer* adamw_create(float learning_rate, float beta1, float beta2, float eps
     optimizer->base.optim_type = OPTIM_TYPE_ADAMW;
     optimizer->base.step = &adamw_step;
     optimizer->base.free = &adamw_free;
-    optimizer->t = 0;
-    optimizer->beta1 = beta1;
-    optimizer->beta2 = beta2;
-    optimizer->epsilon = epsilon;
-    optimizer->weight_decay = weight_decay;
     optimizer->m = NULL;
     optimizer->v = NULL;
+    optimizer->beta1 = beta1;
+    optimizer->beta2 = beta2;
+    optimizer->weight_decay = weight_decay;
+    optimizer->epsilon = epsilon;
     optimizer->num_params = 0;
+    optimizer->t = 0;
     return (Optimizer *)optimizer;
 }
 
 void adamw_step(Optimizer *self, Tensor **params, int num_params) 
 {
     AdamW *adamw = (AdamW *)self;
+    adamw->t += 1;
+
     if (adamw->m == NULL) 
     {
         adamw->m = (Tensor **)malloc(num_params * sizeof(Tensor *));
@@ -36,7 +38,6 @@ void adamw_step(Optimizer *self, Tensor **params, int num_params)
         }
     }
 
-    adamw->t += 1;
     float lr_t = self->learning_rate * sqrtf(1.0f - powf(adamw->beta2, adamw->t)) / (1.0f - powf(adamw->beta1, adamw->t));
 
     for (int i = 0; i < num_params; i++) 

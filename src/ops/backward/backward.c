@@ -1,4 +1,5 @@
 #include <math.h>
+#include <string.h>
 #include <stdlib.h>
 #include "ops/utils/utils.h"
 #include "ops/backward/backward.h"
@@ -220,7 +221,7 @@ void tensor_transpose_backward(Tensor *self)
 {
     Tensor *tensor = self->grad_a;
     int ndim = self->ndim;
-    int *reverse_axes = (int *)malloc(ndim * sizeof(int));
+    int reverse_axes[ndim];
 
     // Reverse the axes permutation
     for (int i = 0; i < ndim; i++) 
@@ -243,8 +244,6 @@ void tensor_transpose_backward(Tensor *self)
         }
         tensor->grad[old_index] += self->grad[i];
     }
-
-    free(reverse_axes);
 
     backward(tensor);
 }
@@ -313,6 +312,7 @@ void tensor_var_backward(Tensor *self)
     int *axes = self->ops_utils.cached_ints;
     int num_axes = self->ops_utils.cached_int;
     int reduce_mask[tensor->ndim];
+    float mean[self->size];
     int divisor;
 
     // Compute the reduce_mask and divisor
@@ -322,7 +322,7 @@ void tensor_var_backward(Tensor *self)
     int unbiased = (divisor > 1) ? divisor - 1 : divisor;
 
     // Recompute the mean in the backward pass
-    float *mean = (float*)calloc(self->size, sizeof(float));
+    memset(mean, 0, self->size * sizeof(float));
     for (int i = 0; i < tensor->size; i++) 
     {
         int mean_index = 0;
@@ -347,7 +347,6 @@ void tensor_var_backward(Tensor *self)
 
     // Accumulate gradients using variance formula
     accumulate_grad(self, tensor, reduce_mask, unbiased, true, mean, true);
-    free(mean);
 
     backward(tensor);
 }
@@ -452,6 +451,8 @@ void tensor_normalize2d_backward(Tensor *self)
     Tensor *x = self->grad_a;
     Tensor *mean = self->ops_utils.cached_tensors[0]; // Cached mean
     Tensor *var = self->ops_utils.cached_tensors[1];  // Cached variance
+    Tensor *dvar = tensor_zeros(NULL, var->shape, var->ndim);
+    Tensor *dmean = tensor_zeros(NULL, mean->shape, mean->ndim);
     float epsilon = self->ops_utils.cached_float;
     int *axes = self->ops_utils.cached_ints;
     int num_axes = self->ops_utils.cached_int;
@@ -461,16 +462,12 @@ void tensor_normalize2d_backward(Tensor *self)
     int reduce_mask[x->ndim];
     compute_reduce_mask_and_divisor(x, axes, num_axes, reduce_mask, &divisor);
 
-
-    Tensor *dvar = tensor_zeros(NULL, var->shape, var->ndim);
-    Tensor *dmean = tensor_zeros(NULL, mean->shape, mean->ndim);
-
+    // Propagate gradients to mean and var
     for (int i = 0; i < x->size; i++) 
     {
         int mean_index = 0;
         int old_index = i;
 
-        // Compute the index in mean/var tensor by skipping reduced axes
         for (int d = x->ndim - 1, k = mean->ndim - 1; d >= 0; d--) 
         {
             if (reduce_mask[d]) 
@@ -481,25 +478,21 @@ void tensor_normalize2d_backward(Tensor *self)
             mean_index += coord * mean->stride[k--];
         }
 
-        // Compute dvar and dmean
         float diff = x->data[i] - mean->data[mean_index];
         dvar->data[mean_index] += self->grad[i] * diff * (-0.5f) * powf(var->data[mean_index] + epsilon, -1.5f);
         dmean->data[mean_index] += self->grad[i] * (-1.0f / sqrtf(var->data[mean_index] + epsilon));
     }
-
-    // Final correction for dmean (as it aggregates contributions from all elements)
     for (int i = 0; i < dmean->size; i++) 
     {
         dmean->data[i] /= divisor;
     }
 
-    // Backpropagate gradients to input x
+    // Propagate gradients to input x
     for (int i = 0; i < x->size; i++) 
     {
         int mean_index = 0;
         int old_index = i;
 
-        // Compute the index in mean/var tensor by skipping reduced axes
         for (int d = x->ndim - 1, k = mean->ndim - 1; d >= 0; d--) 
         {
             if (reduce_mask[d]) 
@@ -510,7 +503,6 @@ void tensor_normalize2d_backward(Tensor *self)
             mean_index += coord * mean->stride[k--];
         }
 
-        // Gradient wrt input x
         float diff = x->data[i] - mean->data[mean_index];
         x->grad[i] += (self->grad[i] / sqrtf(var->data[mean_index] + epsilon)) + (dvar->data[mean_index] * 2 * diff / divisor) + dmean->data[mean_index];
     }

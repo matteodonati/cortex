@@ -53,28 +53,32 @@ Tensor* maxpool2d_forward(Layer *self, Tensor *x)
     int output_width = (input_width + 2 * pad_width - kernel_width) / stride_width + 1;
 
     // im2col transformation of input tensor. Shape: {batch_size, in_channels * kernel_height * kernel_width, output_height * output_width}
-    Tensor *input_col = im2col(x, kernel_height, kernel_width, stride_height, stride_width, pad_height, pad_width);
+    Tensor *ic = im2col(x, kernel_height, kernel_width, stride_height, stride_width, pad_height, pad_width);
 
     // Reshape input_col to {batch_size, in_channels, kernel_height * kernel_width, output_height * output_width}
-    Tensor *input_col_reshaped = tensor_reshape(input_col, (int[]){batch_size, in_channels, kernel_height * kernel_width, output_height * output_width}, 4);
+    int ir_ndim = 4;
+    int ir_shape[] = {batch_size, in_channels, kernel_height * kernel_width, output_height * output_width};
+    Tensor *ir = tensor_reshape(ic, ir_shape, ir_ndim);
 
     // Perform max operation along the kernel size axis (axis 2)
-    Tensor *output_col = tensor_max(input_col_reshaped, 2);
+    Tensor *oc = tensor_max(ir, 2);
 
     // Reshape the output back to {batch_size, in_channels, output_height, output_width}
-    Tensor *output_reshaped = tensor_reshape(output_col, (int[]){batch_size, in_channels, output_height, output_width}, 4);
+    int or_ndim = 4;
+    int or_shape[] = {batch_size, in_channels, output_height, output_width};
+    Tensor *or = tensor_reshape(oc, or_shape, or_ndim);
 
-    // Store intermediate results for backpropagation
+    // Pointers to intermediate results
     self->input = x;
     self->tensor_count = 4;
     self->tensors = (Tensor **)malloc(self->tensor_count * sizeof(Tensor *));
-    self->tensors[0] = input_col;
-    self->tensors[1] = input_col_reshaped;
-    self->tensors[2] = output_col;
-    self->tensors[3] = output_reshaped;
-    self->output = output_reshaped;
+    self->tensors[0] = ic;
+    self->tensors[1] = ir;
+    self->tensors[2] = oc;
+    self->tensors[3] = or;
+    self->output = or;
 
-    return output_reshaped;
+    return or;
 }
 
 void maxpool2d_free(Layer *self) 

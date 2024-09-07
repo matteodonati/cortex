@@ -9,10 +9,8 @@
 Layer* dense_create(const char *name, int input_dim, int output_dim) 
 {
     Dense *dense = (Dense *)malloc(sizeof(Dense));
-
     dense->input_dim = input_dim;
     dense->output_dim = output_dim;
-    
     dense->base.name = NULL;
     if (name) 
     {
@@ -24,13 +22,11 @@ Layer* dense_create(const char *name, int input_dim, int output_dim)
     dense->base.is_training = false;
     dense->base.forward = &dense_forward;
     dense->base.free = &dense_free;
-
     return (Layer *)dense;
 }
 
 Tensor* dense_forward(Layer *self, Tensor *x) 
 {
-    // Get trainable params
     DenseParameters *params = (DenseParameters *)self->params;
 
     if (x->ndim != 2) 
@@ -47,15 +43,16 @@ Tensor* dense_forward(Layer *self, Tensor *x)
     }
 
     // Forward pass
-    Tensor *weights_T = tensor_transpose(params->weights, (int[]){1, 0});
-    Tensor *z = tensor_matmul(x, weights_T);
+    int wt_axes[] = {1, 0};
+    Tensor *wt = tensor_transpose(params->weights, wt_axes);
+    Tensor *z = tensor_matmul(x, wt);
     Tensor *y = tensor_add(z, params->bias);
 
-    // Pointers to intermediate results
+    // Pointers
     self->input = x;
     self->tensor_count = 3;
     self->tensors = (Tensor **)malloc(self->tensor_count * sizeof(Tensor *));
-    self->tensors[0] = weights_T;
+    self->tensors[0] = wt;
     self->tensors[1] = z;
     self->tensors[2] = y;
     self->output = y;
