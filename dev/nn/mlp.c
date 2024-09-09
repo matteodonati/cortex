@@ -4,8 +4,6 @@
 #include <stdlib.h>
 #include <cortex.h>
 
-MemoryPool *memory_pool;
-
 void generate_regression_data(float *x_data, float *y_data, int num_samples) 
 {
     for (int i = 0; i < num_samples; i++) 

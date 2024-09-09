@@ -259,40 +259,99 @@ Tensor* tensor_matmul(Tensor *a, Tensor *b)
     int a_ndim = a->ndim;
     int b_ndim = b->ndim;
 
-    // Handle cases where dimensions are less than 2
-    if (a_ndim == 1) 
+    Tensor *result = NULL;
+
+    // Case 1: 1D x 1D -> Dot product
+    if (a_ndim == 1 && b_ndim == 1) 
     {
-        a = tensor_reshape(a, (int[]){1, a->size}, 2);
-        a_ndim = 2;
+        if (a->size != b->size) 
+        {
+            fprintf(stderr, "Error: Incompatible dimensions for dot product.\n");
+            exit(EXIT_FAILURE);
+        }
+
+        // Initialize result
+        result = tensor_zeros(NULL, (int[]){1}, 1);
+
+        float sum = 0.0f;
+        for (int i = 0; i < a->size; i++) 
+        {
+            sum += a->data[i] * b->data[i];
+        }
+        result->data[0] = sum;
     }
-    if (b_ndim == 1) 
+
+    // Case 2: 1D x 2D -> Treat the 1D tensor as a row vector, then remove the added dimension
+    else if (a_ndim == 1 && b_ndim == 2) 
     {
-        b = tensor_reshape(b, (int[]){b->size, 1}, 2);
-        b_ndim = 2;
+        int k = a->shape[0];  // a's original size is k
+        int n = b->shape[1];  // b's second dimension is n
+        int k_b = b->shape[0];  // b's first dimension should match a's
+
+        if (k != k_b) 
+        {
+            fprintf(stderr, "Error: Incompatible dimensions for matrix multiplication (1D x 2D).\n");
+            exit(EXIT_FAILURE);
+        }
+
+        // Initialize result: (1, n) will be flattened to (n)
+        result = tensor_zeros(NULL, (int[]){n}, 1);
+
+        for (int j = 0; j < n; j++) 
+        {
+            float sum = 0.0f;
+            for (int l = 0; l < k; l++) 
+            {
+                sum += a->data[l] * b->data[l * b->stride[0] + j * b->stride[1]];
+            }
+            result->data[j] = sum;
+        }
     }
 
-    int m = a->shape[a->ndim - 2];
-    int k = a->shape[a->ndim - 1];
-    int n = b->shape[b->ndim - 1];
-
-    // Output ndim
-    int out_ndim = (a_ndim > b_ndim) ? a_ndim : b_ndim;
-
-    // Output shape
-    int out_shape[out_ndim];
-    for (int i = 0; i < out_ndim - 2; i++) 
+    // Case 3: 2D x 1D -> Treat the 1D tensor as a column vector and return 1D result
+    else if (a_ndim == 2 && b_ndim == 1) 
     {
-        out_shape[i] = (a->ndim >= b->ndim) ? a->shape[i] : b->shape[i];
+        int m = a->shape[0];  // a's first dimension
+        int k = a->shape[1];  // a's second dimension
+        int k_b = b->shape[0];  // b's only dimension should match a's second dimension
+
+        if (k != k_b) 
+        {
+            fprintf(stderr, "Error: Incompatible dimensions for matrix-vector multiplication.\n");
+            exit(EXIT_FAILURE);
+        }
+
+        // Initialize result: (m)
+        result = tensor_zeros(NULL, (int[]){m}, 1);
+
+        for (int i = 0; i < m; i++) 
+        {
+            float sum = 0.0f;
+            for (int l = 0; l < k; l++) 
+            {
+                sum += a->data[i * a->stride[0] + l * a->stride[1]] * b->data[l];
+            }
+            result->data[i] = sum;
+        }
     }
-    out_shape[out_ndim - 2] = m;
-    out_shape[out_ndim - 1] = n;
 
-    // Create the result Tensor
-    Tensor *result = tensor_zeros(NULL, out_shape, out_ndim);
-
-    // Perform matrix multiplication
-    for (int batch = 0; batch < result->size / (m * n); batch++) 
+    // Case 4: 2D x 2D -> Matrix multiplication
+    else if (a_ndim == 2 && b_ndim == 2) 
     {
+        int m = a->shape[0];
+        int k = a->shape[1];
+        int k_b = b->shape[0];
+        int n = b->shape[1];
+
+        if (k != k_b) 
+        {
+            fprintf(stderr, "Error: Incompatible dimensions for matrix multiplication (2D x 2D).\n");
+            exit(EXIT_FAILURE);
+        }
+
+        // Initialize result (m, n)
+        result = tensor_zeros(NULL, (int[]){m, n}, 2);
+
         for (int i = 0; i < m; i++) 
         {
             for (int j = 0; j < n; j++) 
@@ -300,13 +359,84 @@ Tensor* tensor_matmul(Tensor *a, Tensor *b)
                 float sum = 0.0f;
                 for (int l = 0; l < k; l++) 
                 {
-                    int a_index = batch * m * k + i * k + l;
-                    int b_index = batch * k * n + l * n + j;
-                    sum += a->data[a_index] * b->data[b_index];
+                    sum += a->data[i * a->stride[0] + l * a->stride[1]] * b->data[l * b->stride[0] + j * b->stride[1]];
                 }
-                result->data[batch * m * n + i * n + j] = sum;
+                result->data[i * result->stride[0] + j * result->stride[1]] = sum;
             }
         }
+    }
+
+    // Case 5: Batched matrix multiplication (N-Dimensional inputs)
+    else if (a_ndim > 2 || b_ndim > 2) 
+    {
+        // Prepare the batch dimensions for broadcasting
+        int max_ndim = (a_ndim > b_ndim) ? a_ndim : b_ndim;
+        int out_shape[max_ndim];
+
+        // Align dimensions for broadcasting, handling batch dims
+        for (int i = 0; i < max_ndim - 2; i++) 
+        {
+            int a_dim = (i < a_ndim - 2) ? a->shape[i] : 1;
+            int b_dim = (i < b_ndim - 2) ? b->shape[i] : 1;
+
+            if (a_dim != 1 && b_dim != 1 && a_dim != b_dim) 
+            {
+                fprintf(stderr, "Error: Non-broadcastable batch dimensions in tensor_matmul.\n");
+                exit(EXIT_FAILURE);
+            }
+
+            out_shape[i] = (a_dim > b_dim) ? a_dim : b_dim;
+        }
+
+        // Handle last two dimensions for matrix multiplication
+        int m = a->shape[a_ndim - 2];  // Rows of a
+        int k_a = a->shape[a_ndim - 1];  // Columns of a
+        int k_b = b->shape[b_ndim - 2];  // Rows of b
+        int n = b->shape[b_ndim - 1];  // Columns of b
+
+        if (k_a != k_b) 
+        {
+            fprintf(stderr, "Error: Incompatible dimensions for matrix multiplication.\n");
+            exit(EXIT_FAILURE);
+        }
+
+        // Set output shape for matrix multiplication
+        out_shape[max_ndim - 2] = m;
+        out_shape[max_ndim - 1] = n;
+
+        // Create the result tensor
+        result = tensor_zeros(NULL, out_shape, max_ndim);
+
+        // Perform batched matrix multiplication
+        for (int batch = 0; batch < result->size / (m * n); batch++) 
+        {
+            for (int i = 0; i < m; i++) 
+            {
+                for (int j = 0; j < n; j++) 
+                {
+                    float sum = 0.0f;
+                    for (int l = 0; l < k_a; l++) 
+                    {
+                        int a_batch_offset = (a_ndim > 2) ? batch * a->stride[0] : 0;
+                        int b_batch_offset = (b_ndim > 2) ? batch * b->stride[0] : 0;
+
+                        int a_index = a_batch_offset + i * a->stride[a_ndim - 2] + l * a->stride[a_ndim - 1];
+                        int b_index = b_batch_offset + l * b->stride[b_ndim - 2] + j * b->stride[b_ndim - 1];
+
+                        sum += a->data[a_index] * b->data[b_index];
+                    }
+
+                    int result_index = batch * result->stride[0] + i * result->stride[max_ndim - 2] + j * result->stride[max_ndim - 1];
+                    result->data[result_index] = sum;
+                }
+            }
+        }
+    }
+
+    else
+    {
+        fprintf(stderr, "Error: Unsupported input dimensions in tensor_matmul.\n");
+        exit(EXIT_FAILURE);
     }
 
     result->backward = &tensor_matmul_backward;
@@ -770,14 +900,13 @@ Tensor* tensor_normalize2d(Tensor *x, bool is_training, Tensor *mean, Tensor *va
 {
     Tensor *y = tensor_zeros(NULL, x->shape, x->ndim);
 
+    // Determine reduce mask and divisor
+    int divisor;
     int reduce_mask[x->ndim];
+    compute_reduce_mask_and_divisor(x, axes, num_axes, reduce_mask, &divisor);
 
     if (is_training) 
     {
-        // Determine reduce mask and divisor
-        int divisor;
-        compute_reduce_mask_and_divisor(x, axes, num_axes, reduce_mask, &divisor);
-
         // Compute the mean
         tensor_reduce(x, mean, reduce_mask);
         for (int i = 0; i < mean->size; i++) 

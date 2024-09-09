@@ -59,6 +59,15 @@ void print_tensor(Tensor *tensor, const char *name)
             printf(", ");
         }
     }
+    printf(")\nstride: (");
+    for (int i = 0; i < tensor->ndim; i++) 
+    {
+        printf("%d", tensor->stride[i]);
+        if (i < tensor->ndim - 1) 
+        {
+            printf(", ");
+        }
+    }
     printf(")\n");
 
     int indices[tensor->ndim];

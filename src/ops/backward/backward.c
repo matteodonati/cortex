@@ -1,4 +1,5 @@
 #include <math.h>
+#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include "ops/utils/utils.h"
@@ -161,49 +162,130 @@ void tensor_matmul_backward(Tensor *self)
     Tensor *a = self->grad_a;
     Tensor *b = self->grad_b;
 
-    int m = a->shape[a->ndim - 2];
-    int k = a->shape[a->ndim - 1];
-    int n = b->shape[b->ndim - 1];
+    int a_ndim = a->ndim;
+    int b_ndim = b->ndim;
+    int result_ndim = self->ndim;
 
-    int batch_size = self->size / (m * n);
-
-    // Compute gradient w.r.t. a
-    for (int batch = 0; batch < batch_size; batch++) 
+    // Case 1: Backward for 1D x 1D -> Dot product
+    if (a_ndim == 1 && b_ndim == 1) 
     {
-        for (int i = 0; i < m; i++) 
+        for (int i = 0; i < a->size; i++) 
         {
-            for (int l = 0; l < k; l++) 
-            {
-                float sum = 0.0f;
-                for (int j = 0; j < n; j++) 
-                {
-                    sum += self->grad[batch * m * n + i * n + j] * b->data[batch * k * n + l * n + j];
-                }
-                a->grad[batch * m * k + i * k + l] += sum;
-            }
+            a->grad[i] += self->grad[0] * b->data[i];  // Grad for a
+            b->grad[i] += self->grad[0] * a->data[i];  // Grad for b
         }
     }
 
-    // Compute gradient w.r.t. b
-    for (int batch = 0; batch < batch_size; batch++) 
+    // Case 2: Backward for 1D x 2D -> Matrix multiply 1D as row vector
+    else if (a_ndim == 1 && b_ndim == 2) 
     {
+        int k = a->shape[0];  // a's original size is k
+        int n = b->shape[1];  // b's second dimension is n
+
         for (int l = 0; l < k; l++) 
         {
             for (int j = 0; j < n; j++) 
             {
-                float sum = 0.0f;
-                for (int i = 0; i < m; i++) 
-                {
-                    sum += self->grad[batch * m * n + i * n + j] * a->data[batch * m * k + i * k + l];
-                }
-                b->grad[batch * k * n + l * n + j] += sum;
+                int b_index = l * b->stride[0] + j * b->stride[1];
+                a->grad[l] += self->grad[j] * b->data[b_index];  // Grad for a
+                b->grad[b_index] += self->grad[j] * a->data[l];  // Grad for b
             }
         }
+    }
+
+    // Case 3: Backward for 2D x 1D -> Matrix multiply 1D as column vector
+    else if (a_ndim == 2 && b_ndim == 1) 
+    {
+        int m = a->shape[0];
+        int k = a->shape[1];
+
+        for (int i = 0; i < m; i++) 
+        {
+            for (int l = 0; l < k; l++) 
+            {
+                a->grad[i * a->stride[0] + l * a->stride[1]] += self->grad[i] * b->data[l];  // Grad for a
+                b->grad[l] += self->grad[i] * a->data[i * a->stride[0] + l * a->stride[1]];  // Grad for b
+            }
+        }
+    }
+
+    // Case 4: Backward for 2D x 2D -> Matrix multiplication
+    else if (a_ndim == 2 && b_ndim == 2) 
+    {
+        int m = a->shape[0];
+        int k = a->shape[1];
+        int n = b->shape[1];
+
+        for (int i = 0; i < m; i++) 
+        {
+            for (int j = 0; j < n; j++) 
+            {
+                for (int l = 0; l < k; l++) 
+                {
+                    a->grad[i * a->stride[0] + l * a->stride[1]] += self->grad[i * self->stride[0] + j * self->stride[1]] * b->data[l * b->stride[0] + j * b->stride[1]];  // Grad for a
+                    b->grad[l * b->stride[0] + j * b->stride[1]] += self->grad[i * self->stride[0] + j * self->stride[1]] * a->data[i * a->stride[0] + l * a->stride[1]];  // Grad for b
+                }
+            }
+        }
+    }
+
+    // Case 5: Backward for batched matrix multiplication (N-Dimensional inputs)
+    else if (a_ndim > 2 || b_ndim > 2) 
+    {
+        // Determine the matrix dimensions
+        int m = a->shape[a_ndim - 2];  // Rows of a
+        int k_a = a->shape[a_ndim - 1];  // Columns of a / Rows of b
+        int k_b = b->shape[b_ndim - 2];  // Rows of b (must match k_a)
+        int n = b->shape[b_ndim - 1];  // Columns of b
+
+        if (k_a != k_b) 
+        {
+            fprintf(stderr, "Error: Incompatible dimensions for matrix multiplication in backward pass.\n");
+            exit(EXIT_FAILURE);
+        }
+
+        // Determine batch dimensions
+        int batch_size_a = (a_ndim > 2) ? a->shape[0] : 1;
+        int batch_size_b = (b_ndim > 2) ? b->shape[0] : 1;
+        int max_batch_size = (batch_size_a > batch_size_b) ? batch_size_a : batch_size_b;  // Use the larger batch size
+
+        // Perform batched matrix multiplication backward
+        for (int batch = 0; batch < max_batch_size; batch++) 
+        {
+            // Determine the effective batch index for broadcasting
+            int a_batch_offset = (batch_size_a > 1) ? batch * a->stride[0] : 0;
+            int b_batch_offset = (batch_size_b > 1) ? batch * b->stride[0] : 0;
+
+            for (int i = 0; i < m; i++) 
+            {
+                for (int j = 0; j < n; j++) 
+                {
+                    float grad_value = self->grad[batch * self->stride[0] + i * self->stride[result_ndim - 2] + j * self->stride[result_ndim - 1]];
+
+                    for (int l = 0; l < k_a; l++) 
+                    {
+                        int a_index = a_batch_offset + i * a->stride[a_ndim - 2] + l * a->stride[a_ndim - 1];
+                        int b_index = b_batch_offset + l * b->stride[b_ndim - 2] + j * b->stride[b_ndim - 1];
+
+                        // Accumulate gradients for 'a' and 'b'
+                        a->grad[a_index] += grad_value * b->data[b_index];  // Grad for a
+                        b->grad[b_index] += grad_value * a->data[a_index];  // Grad for b
+                    }
+                }
+            }
+        }
+    }
+
+    else
+    {
+        fprintf(stderr, "Error: Unsupported input dimensions in tensor_matmul_backward.\n");
+        exit(EXIT_FAILURE);
     }
 
     backward(a);
     backward(b);
 }
+
 
 void tensor_reshape_backward(Tensor *self) 
 {

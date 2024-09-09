@@ -39,36 +39,6 @@ int main()
     Layer *layers[] = {conv1};
     Model *model = model_create(layers, num_layers);
 
-    // Set weights and biases for the two kernels
-    float w[] = {
-        0.1, 0.2, 0.3,
-        0.4, 0.5, 0.6,
-        0.7, 0.8, 0.9,
-        
-        0.1, -0.2, 0.3,
-        -0.4, 0.5, -0.6,
-        0.7, -0.8, 0.9,
-
-        0.2, 0.1, 0.3,
-        0.6, 0.4, 0.5,
-        0.8, 0.7, 0.9,
-
-        -0.1, -0.2, -0.3,
-        -0.4, -0.5, -0.6,
-        -0.7, -0.8, -0.9,
-
-        -0.1, 0.2, -0.3,
-        0.4, -0.5, 0.6,
-        -0.7, 0.8, -0.9,
-
-        -0.2, -0.1, -0.3,
-        -0.6, -0.4, -0.5,
-        -0.8, -0.7, -0.9
-    };
-    float b[] = {1.0, 0.5};
-    memcpy(conv_params->weights->data, w, sizeof(w));
-    memcpy(conv_params->bias->data, b, sizeof(b));
-
     // Forward pass
     Tensor *y_pred = layer_forward(conv1, x);
 

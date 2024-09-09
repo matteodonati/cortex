@@ -60,7 +60,7 @@ Tensor* conv2d_forward(Layer *self, Tensor *x)
     // im2col transformation of input tensor. Resulting shape: {batch_size, in_channels * kernel_height * kernel_width, output_height * output_width}
     Tensor *ic = im2col(x, kernel_height, kernel_width, stride_height, stride_width, pad_height, pad_width);
 
-    // Reshape kernel to 2D for matmul. Shape: {out_channels, in_channels * kernel_height * kernel_width}
+    // Reshape kernel. Shape: {out_channels, in_channels * kernel_height * kernel_width}
     int kr_ndim = 2;
     int kr_shape[] = {out_channels, in_channels * kernel_height * kernel_width};
     Tensor *kr = tensor_reshape(params->weights, kr_shape, kr_ndim);
