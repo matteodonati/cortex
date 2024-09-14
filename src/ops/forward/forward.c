@@ -1,4 +1,3 @@
-#include <omp.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -257,8 +256,6 @@ Tensor* tensor_matmul(Tensor *a, Tensor *b)
         exit(EXIT_FAILURE);
     }
 
-    omp_set_num_threads(omp_get_num_procs());
-
     int a_ndim = a->ndim;
     int b_ndim = b->ndim;
 
@@ -355,8 +352,6 @@ Tensor* tensor_matmul(Tensor *a, Tensor *b)
         // Initialize result (m, n)
         result = tensor_zeros(NULL, (int[]){m, n}, 2);
 
-        // Parallelize the loops with OpenMP
-        #pragma omp parallel for collapse(2)
         for (int i = 0; i < m; i++) 
         {
             for (int j = 0; j < n; j++) 
@@ -412,8 +407,6 @@ Tensor* tensor_matmul(Tensor *a, Tensor *b)
         // Perform batched matrix multiplication
         int num_batches = result->size / (m * n);
 
-        // Parallelize over batches
-        #pragma omp parallel for
         for (int batch = 0; batch < num_batches; batch++) 
         {
             for (int i = 0; i < m; i++) 

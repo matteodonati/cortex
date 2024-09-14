@@ -2,7 +2,7 @@
 CC = gcc
 
 # Compiler flags
-CFLAGS = -Wall -Iinclude -fPIC -O3 -fopenmp -ffast-math
+CFLAGS = -Wall -Iinclude -fPIC -O3 -ffast-math
 
 # Directories
 SRCDIR = src

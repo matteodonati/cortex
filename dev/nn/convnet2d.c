@@ -1,15 +1,8 @@
 #include <math.h>
+#include <time.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <cortex.h>
-#include <sys/time.h>
-
-double get_time_in_seconds() 
-{
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    return (tv.tv_sec) + (tv.tv_usec / 1000000.0);
-}
 
 void generate_image_classification_data(float *x_data, float *y_data, int num_samples, int height, int width) 
 {
@@ -79,7 +72,7 @@ void convnet_classification()
     Optimizer *optim = adamw_create(0.01f, 0.9f, 0.999f, 1e-8f, 0.01f);
 
     // Measure time
-    double start_time = get_time_in_seconds();
+    clock_t start_time = clock();
 
     // Train the model
     model_train(model);
@@ -143,8 +136,9 @@ void convnet_classification()
         printf("Epoch %03d - loss: %f\n", epoch + 1, epoch_loss / dataloader->num_batches);
     }
 
-    double end_time = get_time_in_seconds();
-    printf("\nTraining time: %f seconds\n", end_time - start_time);
+    clock_t end_time = clock();
+    double training_time = (double)(end_time - start_time) / CLOCKS_PER_SEC;
+    printf("\nTraining time: %f seconds\n", training_time);
 
     // Free memory
     optimizer_free(optim);
@@ -155,6 +149,7 @@ void convnet_classification()
 
 int main() 
 {
+    srand(time(NULL));
     convnet_classification();
     return 0;
 }
