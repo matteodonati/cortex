@@ -2,7 +2,7 @@
 CC = gcc
 
 # Compiler flags
-CFLAGS = -Wall -Iinclude -fPIC
+CFLAGS = -Wall -Iinclude -fPIC -O3 -march=native -ffast-math -funroll-loops -ftree-vectorize -flto -fassociative-math
 
 # Directories
 SRCDIR = src
