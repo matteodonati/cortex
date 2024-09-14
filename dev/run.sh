@@ -26,7 +26,7 @@ sudo make install
 rm -f "$BIN_DIR/$PROGRAM_NAME"
 
 # Compile the program and place the binary in the specified directory
-gcc -o "$BIN_DIR/$PROGRAM_NAME" "$PROGRAM_SRC" -lcortex -L/usr/local/lib -I/usr/local/include/cortex -lm
+gcc -fopenmp -o "$BIN_DIR/$PROGRAM_NAME" "$PROGRAM_SRC" -lcortex -L/usr/local/lib -I/usr/local/include/cortex -lm
 
 # Include installation path to shared library search path
 export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH

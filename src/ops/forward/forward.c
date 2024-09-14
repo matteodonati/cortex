@@ -1,3 +1,4 @@
+#include <omp.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -256,6 +257,8 @@ Tensor* tensor_matmul(Tensor *a, Tensor *b)
         exit(EXIT_FAILURE);
     }
 
+    omp_set_num_threads(omp_get_num_procs());
+
     int a_ndim = a->ndim;
     int b_ndim = b->ndim;
 
@@ -336,7 +339,7 @@ Tensor* tensor_matmul(Tensor *a, Tensor *b)
     }
 
     // Case 4: 2D x 2D -> Matrix multiplication
-    else if (a_ndim == 2 && b_ndim == 2) 
+    if (a_ndim == 2 && b_ndim == 2) 
     {
         int m = a->shape[0];
         int k = a->shape[1];
@@ -352,6 +355,8 @@ Tensor* tensor_matmul(Tensor *a, Tensor *b)
         // Initialize result (m, n)
         result = tensor_zeros(NULL, (int[]){m, n}, 2);
 
+        // Parallelize the loops with OpenMP
+        #pragma omp parallel for collapse(2)
         for (int i = 0; i < m; i++) 
         {
             for (int j = 0; j < n; j++) 
@@ -369,7 +374,6 @@ Tensor* tensor_matmul(Tensor *a, Tensor *b)
     // Case 5: Batched matrix multiplication (N-Dimensional inputs)
     else if (a_ndim > 2 || b_ndim > 2) 
     {
-        // Prepare the batch dimensions for broadcasting
         int max_ndim = (a_ndim > b_ndim) ? a_ndim : b_ndim;
         int out_shape[max_ndim];
 
@@ -388,11 +392,10 @@ Tensor* tensor_matmul(Tensor *a, Tensor *b)
             out_shape[i] = (a_dim > b_dim) ? a_dim : b_dim;
         }
 
-        // Handle last two dimensions for matrix multiplication
-        int m = a->shape[a_ndim - 2];  // Rows of a
-        int k_a = a->shape[a_ndim - 1];  // Columns of a
-        int k_b = b->shape[b_ndim - 2];  // Rows of b
-        int n = b->shape[b_ndim - 1];  // Columns of b
+        int m = a->shape[a_ndim - 2];
+        int k_a = a->shape[a_ndim - 1];
+        int k_b = b->shape[b_ndim - 2];
+        int n = b->shape[b_ndim - 1];
 
         if (k_a != k_b) 
         {
@@ -400,7 +403,6 @@ Tensor* tensor_matmul(Tensor *a, Tensor *b)
             exit(EXIT_FAILURE);
         }
 
-        // Set output shape for matrix multiplication
         out_shape[max_ndim - 2] = m;
         out_shape[max_ndim - 1] = n;
 
@@ -408,7 +410,11 @@ Tensor* tensor_matmul(Tensor *a, Tensor *b)
         result = tensor_zeros(NULL, out_shape, max_ndim);
 
         // Perform batched matrix multiplication
-        for (int batch = 0; batch < result->size / (m * n); batch++) 
+        int num_batches = result->size / (m * n);
+
+        // Parallelize over batches
+        #pragma omp parallel for
+        for (int batch = 0; batch < num_batches; batch++) 
         {
             for (int i = 0; i < m; i++) 
             {

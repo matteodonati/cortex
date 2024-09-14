@@ -49,7 +49,7 @@ Inlcude the library using
 and compile your application with
 
 ```bash
-gcc -o my_program my_program.c -lcortex -L/installation/path/lib -I/installation/path/include/cortex -lm
+gcc -fopenmp -o my_program my_program.c -lcortex -L/installation/path/lib -I/installation/path/include/cortex -lm
 ```
 
 Then, you need to make sure that the installation path is always included in the shared library search path. To do this, run
