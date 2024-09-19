@@ -1,70 +1,66 @@
-#include <time.h>
 #include <stdio.h>
-#include <stdlib.h>
+#include <assert.h>
 #include <cortex.h>
 
-void print_tensors()
+int main() 
 {
-    int ndim1 = 2;
-    int ndim2 = 3;
+    // Initialize memory pool with initial size (e.g., 1MB). This means that for each MB malloc is called twice.
+    pool_init(1 * MB);
 
-    int shape1[2] = {2, 3};
-    int shape2[3] = {10, 10, 10};
+    // Define tensor shapes
+    size_t shape[2] = {16, 16};
+    
+    // Print initial memory status
+    printf("Initial used memory: %zu bytes\n", pool_get_used_memory());
+    printf("Initial free memory: %zu bytes\n", pool_get_free_memory());
 
-    // Create a tensor from an array
-    float array[] = {1.0, 2.0, 3.0, 4.0, 5.0, 6.0};
-    Tensor *tensor1 = tensor_from_array("tensor1", array, shape1, ndim1);
-    printf("Tensor 1 (from array):\n");
-    print_tensor_shape(tensor1);
-    print_tensor_data(tensor1);
-    printf("\n");
+    // Create first tensor
+    tensor_t* tensor1 = tensor_create(2, shape);
+    assert(tensor1 != NULL);
 
-    // Create a random tensor
-    Tensor *tensor2 = tensor_rand("tensor2", shape1, ndim1);
-    printf("Tensor 2 (random):\n");
-    print_tensor_shape(tensor2);
-    print_tensor_data(tensor2);
-    printf("\n");
+    // Print memory status after first allocation
+    printf("Used memory after first tensor creation: %zu bytes\n", pool_get_used_memory());
+    printf("Free memory after first tensor creation: %zu bytes\n", pool_get_free_memory());
 
-    // Create a tensor filled with zeros
-    Tensor *tensor3 = tensor_zeros("tensor3", shape1, ndim1);
-    printf("Tensor 3 (zeros):\n");
-    print_tensor_shape(tensor3);
-    print_tensor_data(tensor3);
-    printf("\n");
+    // Create second tensor
+    tensor_t* tensor2 = tensor_create(2, shape);
+    assert(tensor2 != NULL);
 
-    // Create a tensor filled with ones
-    Tensor *tensor4 = tensor_ones("tensor4", shape1, ndim1);
-    printf("Tensor 4 (ones):\n");
-    print_tensor_shape(tensor4);
-    print_tensor_data(tensor4);
-    printf("\n");
+    // Print memory status after second allocation
+    printf("Used memory after second tensor creation: %zu bytes\n", pool_get_used_memory());
+    printf("Free memory after second tensor creation: %zu bytes\n", pool_get_free_memory());
 
-    // Create a tensor filled with a custom value
-    Tensor *tensor5 = tensor_full("tensor5", shape1, ndim1, 2.0);
-    printf("Tensor 5 (full):\n");
-    print_tensor_shape(tensor5);
-    print_tensor_data(tensor5);
-    printf("\n");
+    // Free the first tensor
+    tensor_destroy(tensor1);
 
-    // Create a tensor filled with ones
-    Tensor *tensor6 = tensor_rand("tensor6", shape2, ndim2);
-    printf("Tensor 6 (n-dimensional):\n");
-    print_tensor_shape(tensor6);
-    print_tensor_data(tensor6);
+    // Print memory status after freeing first tensor
+    printf("Used memory after freeing first tensor: %zu bytes\n", pool_get_used_memory());
+    printf("Free memory after freeing first tensor: %zu bytes\n", pool_get_free_memory());
 
-    // Free tensors
-    tensor_free(tensor1);
-    tensor_free(tensor2);
-    tensor_free(tensor3);
-    tensor_free(tensor4);
-    tensor_free(tensor5);
-    tensor_free(tensor6);
-}
+    // Free the second tensor
+    tensor_destroy(tensor2);
 
-int main()
-{
-    srand(time(NULL));
-    print_tensors();
+    // Print memory status after freeing second tensor
+    printf("Used memory after freeing second tensor: %zu bytes\n", pool_get_used_memory());
+    printf("Free memory after freeing second tensor: %zu bytes\n", pool_get_free_memory());
+
+    // Create third tensor
+    tensor_t* tensor3 = tensor_create(2, shape);
+    assert(tensor3 != NULL);
+
+    // Print memory status after third allocation
+    printf("Used memory after third tensor creation: %zu bytes\n", pool_get_used_memory());
+    printf("Free memory after third tensor creation: %zu bytes\n", pool_get_free_memory());
+
+    // Free the third tensor
+    tensor_destroy(tensor3);
+
+    // Print memory status after freeing third tensor
+    printf("Used memory after freeing third tensor: %zu bytes\n", pool_get_used_memory());
+    printf("Free memory after freeing third tensor: %zu bytes\n", pool_get_free_memory());
+
+    // Destroy the memory pool
+    pool_destroy();
+
     return 0;
 }

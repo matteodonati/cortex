@@ -1,44 +1,30 @@
 #ifndef TENSOR_H
 #define TENSOR_H
 
+#include <stddef.h>
+#include <assert.h>
 #include <stdbool.h>
+#include "utils/status/status.h"
 
-struct Tensor;
+#define MAX_DIMS 4
 
-typedef struct TensorOpsUtils
+typedef struct tensor 
 {
-    struct Tensor **cached_tensors;
-    float *cached_floats;
-    int *cached_ints;
-    struct Tensor *cached_tensor;
-    float cached_float;
-    int cached_int;
-} TensorOpsUtils;
-
-typedef struct Tensor 
-{
-    char *name;
-    float *data;
-    float *grad;
-    int *shape;
-    int *stride;
-    struct Tensor *grad_a;
-    struct Tensor *grad_b;
-    void (*backward)(struct Tensor *self);
-    TensorOpsUtils ops_utils;
-    int ndim;
-    int size;
+    size_t ndim;
+    size_t size;
+    size_t shape[MAX_DIMS];
+    size_t stride[MAX_DIMS];
     bool frozen;
-} Tensor;
+    float* data;
+    float* grad;
+    struct tensor* grad_a;
+    struct tensor* grad_b;
+    void (*backward)(struct tensor* self);
+} tensor_t;
 
-Tensor* initialize_tensor(const char *name, int *shape, int ndim);
-Tensor* tensor_from_array(const char *name, float *array, int *shape, int ndim);
-Tensor* tensor_rand(const char *name, int *shape, int ndim, float limit);
-Tensor* tensor_zeros(const char *name, int *shape, int ndim);
-Tensor* tensor_ones(const char *name, int *shape, int ndim);
-Tensor* tensor_full(const char *name, int *shape, int ndim, float value);
-Tensor* tensor_like(const char *name, Tensor *a);
-Tensor* tensor_clone(const char *name, Tensor *a);
-void tensor_free(Tensor *tensor);
+// tensor_create should be static.
+// TODO: implement other initialization functions.
+tensor_t* tensor_create(size_t dim, const size_t shape[]);
+tensor_status_code_t tensor_destroy(tensor_t* tensor);
 
 #endif
