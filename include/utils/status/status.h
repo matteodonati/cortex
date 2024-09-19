@@ -1,7 +1,7 @@
 #ifndef STATUS_H
 #define STATUS_H
 
-typedef enum memory_pool_status_code
+typedef const enum memory_pool_status_code
 {
     POOL_CREATION_SUCCESS,
     POOL_CREATION_FAILURE,
@@ -13,7 +13,7 @@ typedef enum memory_pool_status_code
     POOL_FREE_FAILURE
 } memory_pool_status_code_t;
 
-typedef enum tensor_status_code
+typedef const enum tensor_status_code
 {
     TENSOR_DESTROY_SUCCESS,
     TENSOR_DESTROY_FAILURE

@@ -15,7 +15,7 @@ int main()
     printf("Initial free memory: %zu bytes\n", pool_get_free_memory());
 
     // Create first tensor
-    tensor_t* tensor1 = tensor_create(2, shape);
+    tensor_t* tensor1 = tensor_create(2, shape, TENSOR_TYPE_UINT8);
     assert(tensor1 != NULL);
 
     // Print memory status after first allocation
@@ -23,7 +23,7 @@ int main()
     printf("Free memory after first tensor creation: %zu bytes\n", pool_get_free_memory());
 
     // Create second tensor
-    tensor_t* tensor2 = tensor_create(2, shape);
+    tensor_t* tensor2 = tensor_create(2, shape, TENSOR_TYPE_FLOAT);
     assert(tensor2 != NULL);
 
     // Print memory status after second allocation
@@ -45,7 +45,7 @@ int main()
     printf("Free memory after freeing second tensor: %zu bytes\n", pool_get_free_memory());
 
     // Create third tensor
-    tensor_t* tensor3 = tensor_create(2, shape);
+    tensor_t* tensor3 = tensor_create(2, shape, TENSOR_TYPE_FLOAT);
     assert(tensor3 != NULL);
 
     // Print memory status after third allocation
