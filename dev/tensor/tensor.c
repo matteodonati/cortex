@@ -1,65 +1,101 @@
+#include <time.h>
 #include <stdio.h>
-#include <assert.h>
 #include <cortex.h>
 
 int main() 
 {
-    // Initialize memory pool with initial size (e.g., 1MB). This means that for each MB malloc is called twice.
-    pool_init(1 * MB);
+    pool_init(1 * KB);
 
-    // Define tensor shapes
-    size_t shape[2] = {16, 16};
-    
-    // Print initial memory status
-    printf("Initial used memory: %zu bytes\n", pool_get_used_memory());
-    printf("Initial free memory: %zu bytes\n", pool_get_free_memory());
+    srand((unsigned int)time(NULL));
 
-    // Create first tensor
-    tensor_t* tensor1 = tensor_create(2, shape, TENSOR_TYPE_UINT8);
-    assert(tensor1 != NULL);
+    size_t shape1[2] = {2, 3};
+    size_t shape2[3] = {2, 2, 2};
+    size_t ndim1 = 2;
+    size_t ndim2 = 3;
 
-    // Print memory status after first allocation
-    printf("Used memory after first tensor creation: %zu bytes\n", pool_get_used_memory());
-    printf("Free memory after first tensor creation: %zu bytes\n", pool_get_free_memory());
+    // tensor_rand
+    tensor_t* tensor_rand_example = tensor_rand(shape1, ndim1, 1.0f);
+    if (tensor_rand_example == NULL) 
+    {
+        printf("Failed to create tensor_rand_example\n");
+    } else 
+    {
+        print_tensor(tensor_rand_example, "tensor_rand_example");
+    }
 
-    // Create second tensor
-    tensor_t* tensor2 = tensor_create(2, shape, TENSOR_TYPE_FLOAT);
-    assert(tensor2 != NULL);
+    // tensor_zeros
+    tensor_t* tensor_zeros_example = tensor_zeros(shape2, ndim2);
+    if (tensor_zeros_example == NULL) 
+    {
+        printf("Failed to create tensor_zeros_example\n");
+    } else 
+    {
+        print_tensor(tensor_zeros_example, "tensor_zeros_example");
+    }
 
-    // Print memory status after second allocation
-    printf("Used memory after second tensor creation: %zu bytes\n", pool_get_used_memory());
-    printf("Free memory after second tensor creation: %zu bytes\n", pool_get_free_memory());
+    // tensor_ones
+    tensor_t* tensor_ones_example = tensor_ones(shape1, ndim1);
+    if (tensor_ones_example == NULL) 
+    {
+        printf("Failed to create tensor_ones_example\n");
+    } else 
+    {
+        print_tensor(tensor_ones_example, "tensor_ones_example");
+    }
 
-    // Free the first tensor
-    tensor_destroy(tensor1);
+    // tensor_full
+    float fill_value = 3.14f;
+    tensor_t* tensor_full_example = tensor_full(shape2, ndim2, fill_value);
+    if (tensor_full_example == NULL) 
+    {
+        printf("Failed to create tensor_full_example\n");
+    } else 
+    {
+        print_tensor(tensor_full_example, "tensor_full_example");
+    }
 
-    // Print memory status after freeing first tensor
-    printf("Used memory after freeing first tensor: %zu bytes\n", pool_get_used_memory());
-    printf("Free memory after freeing first tensor: %zu bytes\n", pool_get_free_memory());
+    // tensor_from_array
+    float array_data[6] = {1.0f, -1.0f, 2.0f, -2.0f, 3.0f, -3.0f};
+    tensor_t* tensor_from_array_example = tensor_from_array(array_data, shape1, ndim1);
+    if (tensor_from_array_example == NULL) 
+    {
+        printf("Failed to create tensor_from_array_example\n");
+    } else 
+    {
+        print_tensor(tensor_from_array_example, "tensor_from_array_example");
+    }
 
-    // Free the second tensor
-    tensor_destroy(tensor2);
+    // tensor_like
+    tensor_t* tensor_like_example = tensor_like(tensor_rand_example);
+    if (tensor_like_example == NULL) 
+    {
+        printf("Failed to create tensor_like_example\n");
+    } else 
+    {
+        print_tensor(tensor_like_example, "tensor_like_example");
+    }
 
-    // Print memory status after freeing second tensor
-    printf("Used memory after freeing second tensor: %zu bytes\n", pool_get_used_memory());
-    printf("Free memory after freeing second tensor: %zu bytes\n", pool_get_free_memory());
+    // tensor_clone
+    tensor_t* tensor_clone_example = tensor_clone(tensor_full_example);
+    if (tensor_clone_example == NULL) 
+    {
+        printf("Failed to create tensor_clone_example\n");
+    } else 
+    {
+        print_tensor(tensor_clone_example, "tensor_clone_example");
+    }
 
-    // Create third tensor
-    tensor_t* tensor3 = tensor_create(2, shape, TENSOR_TYPE_FLOAT);
-    assert(tensor3 != NULL);
+    printf("Used memory: %zu bytes\n", pool_get_used_memory());
+    printf("Free memory: %zu bytes\n", pool_get_free_memory());
 
-    // Print memory status after third allocation
-    printf("Used memory after third tensor creation: %zu bytes\n", pool_get_used_memory());
-    printf("Free memory after third tensor creation: %zu bytes\n", pool_get_free_memory());
+    tensor_destroy(tensor_rand_example);
+    tensor_destroy(tensor_zeros_example);
+    tensor_destroy(tensor_ones_example);
+    tensor_destroy(tensor_full_example);
+    tensor_destroy(tensor_from_array_example);
+    tensor_destroy(tensor_like_example);
+    tensor_destroy(tensor_clone_example);
 
-    // Free the third tensor
-    tensor_destroy(tensor3);
-
-    // Print memory status after freeing third tensor
-    printf("Used memory after freeing third tensor: %zu bytes\n", pool_get_used_memory());
-    printf("Free memory after freeing third tensor: %zu bytes\n", pool_get_free_memory());
-
-    // Destroy the memory pool
     pool_destroy();
 
     return 0;

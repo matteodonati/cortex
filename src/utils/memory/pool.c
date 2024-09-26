@@ -3,11 +3,14 @@
 #include <assert.h>
 #include "utils/memory/pool.h"
 
-MemoryPool* global_memory_pool = NULL;
+#define ALIGNMENT 16
+#define ALIGN_UP(x) (((x) + (ALIGNMENT - 1)) & ~(ALIGNMENT - 1))
 
-static MemoryPool* pool_create(size_t size) 
+memory_pool_t* global_memory_pool = NULL;
+
+static memory_pool_t* pool_create(size_t size) 
 {
-    MemoryPool* pool = (MemoryPool*)malloc(sizeof(MemoryPool));
+    memory_pool_t* pool = (memory_pool_t*)malloc(sizeof(memory_pool_t));
     if (!pool)
     {
         return NULL;
@@ -32,13 +35,13 @@ static memory_pool_status_code_t pool_expand(size_t required_size)
 {
     size_t new_pool_size = (global_memory_pool->size > required_size) ? global_memory_pool->size : required_size;
 
-    MemoryPool* new_pool = pool_create(new_pool_size);
+    memory_pool_t* new_pool = pool_create(new_pool_size);
     if (new_pool == NULL) 
     {
         return POOL_EXPAND_FAILURE;
     }
 
-    MemoryPool* pool = global_memory_pool;
+    memory_pool_t* pool = global_memory_pool;
     while (pool->next) 
     {
         pool = pool->next;
@@ -60,7 +63,7 @@ memory_pool_status_code_t pool_init(size_t initial_size)
 
 memory_pool_status_code_t pool_destroy()
 {
-    MemoryPool* pool = global_memory_pool;
+    memory_pool_t* pool = global_memory_pool;
     if (pool == NULL)
     {
         return POOL_DESTROY_FAILURE;
@@ -68,7 +71,7 @@ memory_pool_status_code_t pool_destroy()
 
     while (pool) 
     {
-        MemoryPool* next_pool = pool->next;
+        memory_pool_t* next_pool = pool->next;
         free(pool->pool);
         free(pool);
         pool = next_pool;
@@ -81,14 +84,14 @@ memory_pool_status_code_t pool_destroy()
 void* pool_alloc(size_t size) 
 {
     size = ALIGN_UP(size);
-    size_t total_size = size + sizeof(MemoryBlock);
+    size_t total_size = size + sizeof(memory_block_t);
 
     // Check the free list across all pools for a suitable block
-    MemoryPool* pool = global_memory_pool;
+    memory_pool_t* pool = global_memory_pool;
     while (pool) 
     {
-        MemoryBlock** prev = &pool->free_list;
-        MemoryBlock* current = pool->free_list;
+        memory_block_t** prev = &pool->free_list;
+        memory_block_t* current = pool->free_list;
         while (current) 
         {
             if (current->size >= size) 
@@ -109,7 +112,7 @@ void* pool_alloc(size_t size)
     {
         if (pool->used + total_size <= pool->size) 
         {
-            MemoryBlock* block = (MemoryBlock*)(pool->pool + pool->used);
+            memory_block_t* block = (memory_block_t*)(pool->pool + pool->used);
             block->size = size;
             pool->used += total_size;
             return (void*)(block + 1);
@@ -127,7 +130,7 @@ void* pool_alloc(size_t size)
     {
         pool = pool->next;
     }
-    MemoryBlock* block = (MemoryBlock*)(pool->pool + pool->used);
+    memory_block_t* block = (memory_block_t*)(pool->pool + pool->used);
     block->size = size;
     pool->used += total_size;
 
@@ -141,12 +144,11 @@ memory_pool_status_code_t pool_free(void* ptr)
         return POOL_FREE_FAILURE;
     }
 
-    // Retrieve the block header
-    MemoryBlock* block = ((MemoryBlock*)ptr) - 1;
+    memory_block_t* block = ((memory_block_t*)ptr) - 1;
     uintptr_t block_addr = (uintptr_t)block;
 
     // Add the block to the free list in the corresponding pool
-    MemoryPool* pool = global_memory_pool;
+    memory_pool_t* pool = global_memory_pool;
     while (pool) 
     {
         uintptr_t pool_start = (uintptr_t)pool->pool;
@@ -156,7 +158,7 @@ memory_pool_status_code_t pool_free(void* ptr)
         {
             block->next = pool->free_list;
             pool->free_list = block;
-            pool->used -= (block->size + sizeof(MemoryBlock));
+            pool->used -= (block->size + sizeof(memory_block_t));
             return POOL_FREE_SUCCESS;
         }
 
@@ -169,7 +171,7 @@ memory_pool_status_code_t pool_free(void* ptr)
 size_t pool_get_used_memory(void) 
 {
     size_t total_used = 0;
-    MemoryPool* pool = global_memory_pool;
+    memory_pool_t* pool = global_memory_pool;
     while (pool) 
     {
         total_used += pool->used;
@@ -181,7 +183,7 @@ size_t pool_get_used_memory(void)
 size_t pool_get_free_memory(void) 
 {
     size_t total_free = 0;
-    MemoryPool* pool = global_memory_pool;
+    memory_pool_t* pool = global_memory_pool;
     while (pool) 
     {
         total_free += pool->size - pool->used;

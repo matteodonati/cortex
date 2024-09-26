@@ -3,6 +3,7 @@
 
 #include "utils/status/status.h"
 #include "utils/memory/pool.h"
+#include "utils/tensor/tensor.h"
 #include "tensor/tensor.h"
 
 #endif

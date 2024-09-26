@@ -8,25 +8,23 @@
 
 #define KB 1024
 #define MB 1024 * 1024
-#define ALIGNMENT 16
-#define ALIGN_UP(x) (((x) + (ALIGNMENT - 1)) & ~(ALIGNMENT - 1))
 
-typedef struct MemoryBlock 
+typedef struct memory_block 
 {
     size_t size;
-    struct MemoryBlock* next;
-} MemoryBlock;
+    struct memory_block* next;
+} memory_block_t;
 
-typedef struct MemoryPool 
+typedef struct memory_pool 
 {
     uint8_t* pool;
     size_t size;
     size_t used;
-    MemoryBlock* free_list;
-    struct MemoryPool* next;
-} MemoryPool;
+    memory_block_t* free_list;
+    struct memory_pool* next;
+} memory_pool_t;
 
-extern MemoryPool* global_memory_pool;
+extern memory_pool_t* global_memory_pool;
 
 memory_pool_status_code_t pool_init(size_t initial_size);
 memory_pool_status_code_t pool_destroy();
