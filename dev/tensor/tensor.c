@@ -4,7 +4,7 @@
 
 int main() 
 {
-    pool_init(1 * KB);
+    pool_init(256 * KB);
 
     srand((unsigned int)time(NULL));
 
@@ -85,6 +85,28 @@ int main()
         print_tensor(tensor_clone_example, "tensor_clone_example");
     }
 
+    // tensor_add
+    tensor_t* tensor_add_example = tensor_add(tensor_rand_example, tensor_ones_example);
+    if (tensor_add_example == NULL) 
+    {
+        printf("Failed to create tensor_add_example\n");
+    } else 
+    {
+        print_tensor(tensor_add_example, "tensor_add_example");
+    }
+
+    // tensor_reshape
+    size_t new_shape[3] = {1, 3, 2};
+    size_t new_ndim = 3;
+    tensor_t* tensor_reshape_example = tensor_reshape(tensor_rand_example, new_shape, new_ndim);
+    if (tensor_reshape_example == NULL) 
+    {
+        printf("Failed to create tensor_reshape_example\n");
+    } else 
+    {
+        print_tensor(tensor_reshape_example, "tensor_reshape_example");
+    }
+
     printf("Used memory: %zu bytes\n", pool_get_used_memory());
     printf("Free memory: %zu bytes\n", pool_get_free_memory());
 
@@ -95,6 +117,7 @@ int main()
     tensor_destroy(tensor_from_array_example);
     tensor_destroy(tensor_like_example);
     tensor_destroy(tensor_clone_example);
+    tensor_destroy(tensor_add_example);
 
     pool_destroy();
 

@@ -1,0 +1,51 @@
+#include <assert.h>
+#include <string.h> 
+#include "ops/backward/backward.h"
+
+void tensor_add_backward(tensor_t* __restrict__ self) 
+{
+    assert(self != NULL && "Input tensor is NULL in tensor_add_backward.");
+    assert(self->grad_a != NULL && "grad_a tensor is NULL in tensor_add_backward.");
+    assert(self->grad_b != NULL && "grad_b tensor is NULL in tensor_add_backward.");
+
+    tensor_t* a = self->grad_a;
+    tensor_t* b = self->grad_b;
+    float* __restrict__ a_grad = a->grad;
+    float* __restrict__ b_grad = b->grad;
+    const float* __restrict__ grad_output = self->grad;
+
+    for (size_t i = 0; i < self->size; ++i) 
+    {
+        a_grad[i] += grad_output[i];
+        b_grad[i] += grad_output[i];
+    }
+
+    if (a->backward) 
+    {
+        a->backward(a);
+    }
+    if (b->backward) 
+    {
+        b->backward(b);
+    }
+}
+
+void tensor_reshape_backward(tensor_t* __restrict__ self) 
+{
+    assert(self != NULL && "Input tensor is NULL in tensor_reshape_backward.");
+    assert(self->grad_a != NULL && "grad_a tensor is NULL in tensor_reshape_backward.");
+
+    tensor_t* tensor = self->grad_a;
+    float* __restrict__ grad = tensor->grad;
+    const float* __restrict__ self_grad = self->grad;
+
+    for (size_t i = 0; i < self->size; ++i) 
+    {
+        grad[i] += self_grad[i];
+    }
+
+    if (tensor->backward) 
+    {
+        tensor->backward(tensor);
+    }
+}

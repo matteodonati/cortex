@@ -1,6 +1,7 @@
 #ifndef TENSOR_H
 #define TENSOR_H
 
+#include <stddef.h>
 #include <stdbool.h>
 #include "utils/status/status.h"
 
