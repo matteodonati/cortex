@@ -3,16 +3,6 @@
 #include "tensor/tensor.h"
 #include "utils/memory/pool.h"
 
-static void compute_size_and_stride(size_t ndim, const size_t shape[], size_t stride[], size_t* size) 
-{
-    *size = 1;
-    for (size_t i = ndim; i > 0; --i) 
-    {
-        stride[i - 1] = *size;
-        *size *= shape[i - 1];
-    }
-}
-
 static tensor_t* tensor_create(size_t ndim, const size_t shape[]) 
 {
     if (ndim == 0 || ndim > MAX_DIMS)
@@ -24,20 +14,24 @@ static tensor_t* tensor_create(size_t ndim, const size_t shape[])
         return NULL;
     }
 
-    size_t size;
-    size_t stride[MAX_DIMS];
-
-    compute_size_and_stride(ndim, shape, stride, &size);
-
     tensor_t* tensor = (tensor_t*)pool_alloc(sizeof(tensor_t));
+
     if (tensor == NULL)
     {
         return NULL;
     }
 
+    size_t size = 1;
+    size_t stride[MAX_DIMS];
+    for (size_t i = ndim; i > 0; --i) 
+    {
+        stride[i - 1] = size;
+        size *= shape[i - 1];
+    }
     tensor->ndim = ndim;
     tensor->size = size;
     tensor->frozen = false;
+    tensor->context = NULL;
     tensor->grad_a = NULL;
     tensor->grad_b = NULL;
     tensor->backward = NULL;
@@ -76,9 +70,17 @@ tensor_status_code_t tensor_destroy(tensor_t* tensor)
     {
         return TENSOR_DESTROY_FAILURE;
     }
-    pool_free(tensor->data);
-    pool_free(tensor->grad);
+    
+    if (tensor->data)
+    {
+        pool_free(tensor->data);
+    }
+    if (tensor->grad)
+    {
+        pool_free(tensor->grad);
+    }
     pool_free(tensor);
+
     return TENSOR_DESTROY_SUCCESS;
 }
 

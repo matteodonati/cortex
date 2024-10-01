@@ -7,5 +7,7 @@
 #include "tensor/tensor.h"
 #include "ops/forward/forward.h"
 #include "ops/backward/backward.h"
+#include "nn/layers/layer.h"
+#include "nn/layers/dense.h"
 
 #endif

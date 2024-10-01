@@ -16,6 +16,7 @@ typedef struct tensor
     bool frozen;
     float* data;
     float* grad;
+    void* context;
     struct tensor* grad_a;
     struct tensor* grad_b;
     void (*backward)(struct tensor* self);

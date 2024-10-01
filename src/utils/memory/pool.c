@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -83,8 +84,13 @@ memory_pool_status_code_t pool_destroy()
 
 void* pool_alloc(size_t size) 
 {
+    if (size == 0)
+    {
+        size = ALIGNMENT;
+    }
+
     size = ALIGN_UP(size);
-    size_t total_size = size + sizeof(memory_block_t);
+    size_t total_size = ALIGN_UP(size + sizeof(memory_block_t));
 
     // Check the free list across all pools for a suitable block
     memory_pool_t* pool = global_memory_pool;
@@ -98,6 +104,8 @@ void* pool_alloc(size_t size)
             {
                 *prev = current->next;
                 pool->used += total_size;
+                current->size = size; 
+                current->next = NULL;
                 return (void*)(current + 1);
             }
             prev = &current->next;
@@ -114,27 +122,37 @@ void* pool_alloc(size_t size)
         {
             memory_block_t* block = (memory_block_t*)(pool->pool + pool->used);
             block->size = size;
+            block->next = NULL;
             pool->used += total_size;
             return (void*)(block + 1);
         }
         pool = pool->next;
     }
 
-    // Create a new pool
+    // Expand the pool if no suitable space is found
     if (pool_expand(total_size) == POOL_EXPAND_FAILURE) 
     {
         return NULL;
     }
+
+    // Allocate from the new pool
     pool = global_memory_pool;
     while (pool->next) 
     {
         pool = pool->next;
     }
-    memory_block_t* block = (memory_block_t*)(pool->pool + pool->used);
-    block->size = size;
-    pool->used += total_size;
-
-    return (void*)(block + 1);
+    if (pool->used + total_size <= pool->size) 
+    {
+        memory_block_t* block = (memory_block_t*)(pool->pool + pool->used);
+        block->size = size; 
+        block->next = NULL;
+        pool->used += total_size;
+        return (void*)(block + 1);
+    }
+    else
+    {
+        return NULL;
+    }
 }
 
 memory_pool_status_code_t pool_free(void* ptr) 
@@ -146,9 +164,9 @@ memory_pool_status_code_t pool_free(void* ptr)
 
     memory_block_t* block = ((memory_block_t*)ptr) - 1;
     uintptr_t block_addr = (uintptr_t)block;
-
-    // Add the block to the free list in the corresponding pool
     memory_pool_t* pool = global_memory_pool;
+
+    // Find the pool containing the block
     while (pool) 
     {
         uintptr_t pool_start = (uintptr_t)pool->pool;
@@ -158,7 +176,18 @@ memory_pool_status_code_t pool_free(void* ptr)
         {
             block->next = pool->free_list;
             pool->free_list = block;
-            pool->used -= (block->size + sizeof(memory_block_t));
+            size_t total_size = block->size + sizeof(memory_block_t);
+            total_size = ALIGN_UP(total_size);
+
+            if (pool->used >= total_size)
+            {
+                pool->used -= total_size;
+            }
+            else
+            {
+                pool->used = 0;
+            }
+
             return POOL_FREE_SUCCESS;
         }
 

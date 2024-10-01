@@ -107,8 +107,8 @@ int main()
         print_tensor(tensor_reshape_example, "tensor_reshape_example");
     }
 
-    printf("Used memory: %zu bytes\n", pool_get_used_memory());
-    printf("Free memory: %zu bytes\n", pool_get_free_memory());
+    printf("Used memory before destroy: %zu bytes\n", pool_get_used_memory());
+    printf("Free memory before destroy: %zu bytes\n", pool_get_free_memory());
 
     tensor_destroy(tensor_rand_example);
     tensor_destroy(tensor_zeros_example);
@@ -118,6 +118,10 @@ int main()
     tensor_destroy(tensor_like_example);
     tensor_destroy(tensor_clone_example);
     tensor_destroy(tensor_add_example);
+    tensor_destroy(tensor_reshape_example);
+
+    printf("Used memory after destroy: %zu bytes\n", pool_get_used_memory());
+    printf("Free memory after destroy: %zu bytes\n", pool_get_free_memory());
 
     pool_destroy();
 
