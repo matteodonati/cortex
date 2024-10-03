@@ -20,14 +20,8 @@ void tensor_add_backward(tensor_t* __restrict__ self)
         b_grad[i] += grad_output[i];
     }
 
-    if (a->backward) 
-    {
-        a->backward(a);
-    }
-    if (b->backward) 
-    {
-        b->backward(b);
-    }
+    tensor_backward(a);
+    tensor_backward(b);
 }
 
 void tensor_reshape_backward(tensor_t* __restrict__ self) 
@@ -46,8 +40,5 @@ void tensor_reshape_backward(tensor_t* __restrict__ self)
         grad[i] += self_grad[i];
     }
 
-    if (tensor->backward) 
-    {
-        tensor->backward(tensor);
-    }
+    tensor_backward(tensor);
 }

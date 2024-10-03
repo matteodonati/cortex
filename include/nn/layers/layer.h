@@ -22,12 +22,12 @@ typedef struct layer_t
     layer_status_code_t (*free)(struct layer_t *self);
 } layer_t;
 
+parameters_status_code_t parameters_destroy(parameters_t *params);
+layer_status_code_t layer_destroy(layer_t *layer);
+
 static inline tensor_t *layer_forward(layer_t *self, const tensor_t *x)
 {
     return self->forward(self, x);
 }
-
-parameters_status_code_t parameters_destroy(parameters_t *params);
-layer_status_code_t layer_destroy(layer_t *layer);
 
 #endif

@@ -31,4 +31,12 @@ tensor_t* tensor_full(const size_t *shape, size_t ndim, float value);
 tensor_t* tensor_like(const tensor_t *a);
 tensor_t* tensor_clone(const tensor_t *a);
 
+static inline void tensor_backward(tensor_t *x)
+{
+    if (x->backward)
+    {
+        x->backward(x);
+    }
+}
+
 #endif

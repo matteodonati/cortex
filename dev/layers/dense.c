@@ -13,20 +13,15 @@ int main()
     size_t output_dim = 4;
 
     // Create an input tensor with specific values
+    float input_array[6] = {1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f};
     size_t input_shape[2] = {batch_size, input_dim};
-    tensor_t* input_tensor = tensor_zeros(input_shape, 2);
+    tensor_t* input_tensor = tensor_from_array(input_array, input_shape, 2);
     if (input_tensor == NULL) 
     {
         printf("Failed to create input_tensor\n");
         pool_destroy();
         return -1;
     }
-    input_tensor->data[0] = 1.0f;
-    input_tensor->data[1] = 2.0f;
-    input_tensor->data[2] = 3.0f;
-    input_tensor->data[3] = 4.0f;
-    input_tensor->data[4] = 5.0f;
-    input_tensor->data[5] = 6.0f;
     print_tensor(input_tensor, "input");
 
     // Create a dense layer
@@ -75,10 +70,7 @@ int main()
     {
         output_tensor->grad[i] = 1.0f;
     }
-    if (output_tensor->backward) 
-    {
-        output_tensor->backward(output_tensor);
-    }
+    tensor_backward(output_tensor);
 
     // Print weights, biases
     print_tensor(params->weights, "weights");
