@@ -2,7 +2,7 @@
 #include "ops/forward/forward.h"
 #include "ops/backward/backward.h"
 
-tensor_t* tensor_add(const tensor_t* __restrict__ a, const tensor_t* __restrict__ b) 
+tensor_t* tensor_add(const tensor_t* a, const tensor_t* b) 
 {
     if (a == NULL || b == NULL)
     {
@@ -20,9 +20,9 @@ tensor_t* tensor_add(const tensor_t* __restrict__ a, const tensor_t* __restrict_
     }
 
     size_t size = a->size;
-    const float* __restrict__ a_data = a->data;
-    const float* __restrict__ b_data = b->data;
-    float* __restrict__ res_data = result->data;
+    const float* a_data = a->data;
+    const float* b_data = b->data;
+    float* res_data = result->data;
 
     for (size_t i = 0; i < size; ++i) 
     {
@@ -36,7 +36,7 @@ tensor_t* tensor_add(const tensor_t* __restrict__ a, const tensor_t* __restrict_
     return result;
 }
 
-tensor_t* tensor_reshape(const tensor_t* __restrict__ tensor, const size_t* __restrict__ new_shape, size_t new_ndim) 
+tensor_t* tensor_reshape(const tensor_t* tensor, const size_t* new_shape, size_t new_ndim) 
 {
     if (tensor == NULL || new_shape == NULL)
     {

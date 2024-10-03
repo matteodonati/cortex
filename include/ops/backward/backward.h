@@ -3,7 +3,7 @@
 
 #include "tensor/tensor.h"
 
-void tensor_add_backward(tensor_t* __restrict__ self);
-void tensor_reshape_backward(tensor_t* __restrict__ self);
+void tensor_add_backward(tensor_t* self);
+void tensor_reshape_backward(tensor_t* self);
 
 #endif

@@ -1,7 +1,7 @@
 #include <string.h> 
 #include "ops/backward/backward.h"
 
-void tensor_add_backward(tensor_t* __restrict__ self) 
+void tensor_add_backward(tensor_t* self) 
 {
     if (self == NULL || self->grad_a == NULL || self->grad_b == NULL)
     {
@@ -10,9 +10,9 @@ void tensor_add_backward(tensor_t* __restrict__ self)
 
     tensor_t* a = self->grad_a;
     tensor_t* b = self->grad_b;
-    float* __restrict__ a_grad = a->grad;
-    float* __restrict__ b_grad = b->grad;
-    const float* __restrict__ grad_output = self->grad;
+    float* a_grad = a->grad;
+    float* b_grad = b->grad;
+    const float* grad_output = self->grad;
 
     for (size_t i = 0; i < self->size; ++i) 
     {
@@ -24,7 +24,7 @@ void tensor_add_backward(tensor_t* __restrict__ self)
     tensor_backward(b);
 }
 
-void tensor_reshape_backward(tensor_t* __restrict__ self) 
+void tensor_reshape_backward(tensor_t* self) 
 {
     if (self == NULL || self->grad_a == NULL)
     {
@@ -32,8 +32,8 @@ void tensor_reshape_backward(tensor_t* __restrict__ self)
     }
 
     tensor_t* tensor = self->grad_a;
-    float* __restrict__ grad = tensor->grad;
-    const float* __restrict__ self_grad = self->grad;
+    float* grad = tensor->grad;
+    const float* self_grad = self->grad;
 
     for (size_t i = 0; i < self->size; ++i) 
     {

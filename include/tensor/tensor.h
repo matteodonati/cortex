@@ -23,15 +23,15 @@ typedef struct tensor
 } tensor_t;
 
 tensor_status_code_t tensor_destroy(tensor_t* tensor);
-tensor_t* tensor_from_array(const float *array, const size_t *shape, size_t ndim);
-tensor_t* tensor_rand(const size_t *shape, size_t ndim, float limit);
-tensor_t* tensor_zeros(const size_t *shape, size_t ndim);
-tensor_t* tensor_ones(const size_t *shape, size_t ndim);
-tensor_t* tensor_full(const size_t *shape, size_t ndim, float value);
-tensor_t* tensor_like(const tensor_t *a);
-tensor_t* tensor_clone(const tensor_t *a);
+tensor_t* tensor_from_array(const float* array, const size_t* shape, size_t ndim);
+tensor_t* tensor_rand(const size_t* shape, size_t ndim, float limit);
+tensor_t* tensor_zeros(const size_t* shape, size_t ndim);
+tensor_t* tensor_ones(const size_t* shape, size_t ndim);
+tensor_t* tensor_full(const size_t* shape, size_t ndim, float value);
+tensor_t* tensor_like(const tensor_t* a);
+tensor_t* tensor_clone(const tensor_t* a);
 
-static inline void tensor_backward(tensor_t *x)
+static inline void tensor_backward(tensor_t* x)
 {
     if (x->backward)
     {

@@ -158,18 +158,18 @@ tensor_t* dense_forward(layer_t *self, const tensor_t *input)
         return NULL;
     }
 
-    const float *__restrict__ input_data = input->data;
-    const float *__restrict__ weights_data = params->weights->data;
-    const float *__restrict__ bias_data = params->bias->data;
-    float *__restrict__ output_data = output->data;
+    const float *input_data = input->data;
+    const float *weights_data = params->weights->data;
+    const float *bias_data = params->bias->data;
+    float *output_data = output->data;
 
     for (size_t i = 0; i < batch_size; ++i)
     {
         for (size_t j = 0; j < output_dim; ++j)
         {
             float sum = bias_data[j];
-            const float *__restrict__ input_row = &input_data[i * input_dim];
-            const float *__restrict__ weight_row = &weights_data[j * input_dim];
+            const float *input_row = &input_data[i * input_dim];
+            const float *weight_row = &weights_data[j * input_dim];
 
             for (size_t k = 0; k < input_dim; ++k)
             {
@@ -214,17 +214,17 @@ void dense_backward(tensor_t *output)
     size_t output_dim = dense->output_dim;
     size_t input_dim = dense->input_dim;
 
-    const float *__restrict__ output_grad = output->grad;
-    const float *__restrict__ input_data = input->data;
-    float *__restrict__ input_grad = input->grad;
-    const float *__restrict__ weights_data = params->weights->data;
-    float *__restrict__ weights_grad = params->weights->grad;
-    float *__restrict__ bias_grad = params->bias->grad;
+    const float *output_grad = output->grad;
+    const float *input_data = input->data;
+    float *input_grad = input->grad;
+    const float *weights_data = params->weights->data;
+    float *weights_grad = params->weights->grad;
+    float *bias_grad = params->bias->grad;
 
     for (size_t i = 0; i < batch_size; ++i)
     {
-        const float *__restrict__ input_row = &input_data[i * input_dim];
-        float *__restrict__ input_grad_row = &input_grad[i * input_dim];
+        const float *input_row = &input_data[i * input_dim];
+        float *input_grad_row = &input_grad[i * input_dim];
 
         for (size_t j = 0; j < output_dim; ++j)
         {
@@ -232,8 +232,8 @@ void dense_backward(tensor_t *output)
 
             bias_grad[j] += grad_out;
 
-            float *__restrict__ weights_grad_row = &weights_grad[j * input_dim];
-            const float *__restrict__ weights_row = &weights_data[j * input_dim];
+            float *weights_grad_row = &weights_grad[j * input_dim];
+            const float *weights_row = &weights_data[j * input_dim];
 
             for (size_t k = 0; k < input_dim; ++k)
             {

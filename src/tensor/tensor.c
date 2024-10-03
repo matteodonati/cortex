@@ -91,7 +91,7 @@ tensor_status_code_t tensor_destroy(tensor_t* tensor)
     return TENSOR_DESTROY_SUCCESS;
 }
 
-tensor_t* tensor_from_array(const float *array, const size_t *shape, size_t ndim) 
+tensor_t* tensor_from_array(const float* array, const size_t* shape, size_t ndim) 
 {
     tensor_t *tensor = tensor_create(ndim, shape);
     if (tensor == NULL)
@@ -102,7 +102,7 @@ tensor_t* tensor_from_array(const float *array, const size_t *shape, size_t ndim
     return tensor;
 }
 
-tensor_t* tensor_rand(const size_t *shape, size_t ndim, float limit) 
+tensor_t* tensor_rand(const size_t* shape, size_t ndim, float limit) 
 {
     tensor_t *tensor = tensor_create(ndim, shape);
     if (tensor == NULL)
@@ -116,7 +116,7 @@ tensor_t* tensor_rand(const size_t *shape, size_t ndim, float limit)
     return tensor;
 }
 
-tensor_t* tensor_full(const size_t *shape, size_t ndim, float value) 
+tensor_t* tensor_full(const size_t* shape, size_t ndim, float value) 
 {
     tensor_t *tensor = tensor_create(ndim, shape);
     if (tensor == NULL)
@@ -130,7 +130,7 @@ tensor_t* tensor_full(const size_t *shape, size_t ndim, float value)
     return tensor;
 }
 
-tensor_t* tensor_zeros(const size_t *shape, size_t ndim) 
+tensor_t* tensor_zeros(const size_t* shape, size_t ndim) 
 {
     tensor_t *tensor = tensor_create(ndim, shape);
     if (tensor == NULL)
@@ -140,7 +140,7 @@ tensor_t* tensor_zeros(const size_t *shape, size_t ndim)
     return tensor;
 }
 
-tensor_t* tensor_ones(const size_t *shape, size_t ndim) 
+tensor_t* tensor_ones(const size_t* shape, size_t ndim) 
 {
     return tensor_full(shape, ndim, 1.0f);
 }
@@ -154,7 +154,7 @@ tensor_t* tensor_like(const tensor_t *tensor)
     return tensor_create(tensor->ndim, tensor->shape);
 }
 
-tensor_t* tensor_clone(const tensor_t *tensor)
+tensor_t* tensor_clone(const tensor_t* tensor)
 {
     if (tensor == NULL)
     {
