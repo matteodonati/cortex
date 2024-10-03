@@ -1,31 +1,48 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 #include "utils/memory/pool.h"
 #include "nn/layers/dense.h"
 
 parameters_t* dense_parameters_create(size_t input_dim, size_t output_dim)
 {
     dense_parameters_t *params = (dense_parameters_t *)pool_alloc(sizeof(dense_parameters_t));
-    assert(params != NULL && "Failed to allocate memory for dense_parameters_t.");
+    if (params == NULL)
+    {
+        return NULL;
+    }
 
     params->base.freeze_params = dense_parameters_freeze;
-    params->base.free = dense_parameters_free;
+    params->base.free = dense_parameters_destroy;
     params->base.num_params = 2;
 
     float limit = sqrtf(1.0f / input_dim);
 
     size_t weights_shape[2] = {output_dim, input_dim};
     params->weights = tensor_rand(weights_shape, 2, limit);
-    assert(params->weights != NULL && "Failed to create weights tensor.");
+    if (params->weights == NULL)
+    {
+        pool_free(params);
+        return NULL;
+    }
 
     size_t bias_shape[1] = {output_dim};
     params->bias = tensor_rand(bias_shape, 1, limit);
-    assert(params->bias != NULL && "Failed to create bias tensor.");
+    if (params->bias == NULL)
+    {
+        tensor_destroy(params->weights);
+        pool_free(params);
+        return NULL;
+    }
 
     params->base.params_array = (tensor_t **)pool_alloc(2 * sizeof(tensor_t *));
-    assert(params->base.params_array != NULL && "Failed to allocate params_array.");
+    if (params->base.params_array == NULL)
+    {
+        tensor_destroy(params->bias);
+        tensor_destroy(params->weights);
+        pool_free(params);
+        return NULL;
+    }
     params->base.params_array[0] = params->weights;
     params->base.params_array[1] = params->bias;
 
@@ -39,34 +56,44 @@ void dense_parameters_freeze(parameters_t *self)
     params->bias->frozen = true;
 }
 
-void dense_parameters_free(parameters_t *self)
+parameters_status_code_t dense_parameters_destroy(parameters_t *self)
 {
     if (self == NULL)
     {
-        return;
+        return PARAMETERS_DESTROY_FAILURE;
     }
 
     dense_parameters_t *params = (dense_parameters_t *)self;
 
     if (params->weights)
     {
-        tensor_destroy(params->weights);
+        if (tensor_destroy(params->weights) == TENSOR_DESTROY_FAILURE)
+        {
+            return PARAMETERS_DESTROY_FAILURE;
+        }
     }
     if (params->bias)
     {
-        tensor_destroy(params->bias);
+        if (tensor_destroy(params->bias) == TENSOR_DESTROY_FAILURE)
+        {
+            return PARAMETERS_DESTROY_FAILURE;
+        }
     }
-    if (params->base.params_array)
+    if (pool_free(params) == POOL_FREE_FAILURE)
     {
-        pool_free(params->base.params_array);
+        return PARAMETERS_DESTROY_FAILURE;
     }
-    pool_free(params);
+
+    return PARAMETERS_DESTROY_SUCCESS;
 }
 
 layer_t* dense_create(const char *name, size_t input_dim, size_t output_dim)
 {
     dense_layer_t *dense = (dense_layer_t *)pool_alloc(sizeof(dense_layer_t));
-    assert(dense != NULL && "Failed to allocate memory for dense_layer_t.");
+    if (dense == NULL)
+    {
+        return NULL;
+    }
 
     dense->input_dim = input_dim;
     dense->output_dim = output_dim;
@@ -76,29 +103,49 @@ layer_t* dense_create(const char *name, size_t input_dim, size_t output_dim)
     {
         size_t name_length = strlen(name) + 1;
         dense->base.name = (char *)pool_alloc(name_length * sizeof(char));
-        assert(dense->base.name != NULL && "Failed to allocate memory for layer name.");
+        if (dense->base.name == NULL)
+        {
+            pool_free(dense);
+            return NULL;
+        }
         memcpy(dense->base.name, name, name_length);
     }
     dense->base.is_training = false;
     dense->base.forward = dense_forward;
-    dense->base.free = dense_free;
+    dense->base.free = dense_destroy;
 
     dense->base.params = dense_parameters_create(input_dim, output_dim);
-    assert(dense->base.params != NULL && "Failed to create dense parameters.");
+    if (dense->base.params == NULL)
+    {
+        if (dense->base.name)
+        {
+            pool_free(dense->base.name);
+        }
+        pool_free(dense);
+        return NULL;
+    }
 
     return (layer_t *)dense;
 }
 
 tensor_t* dense_forward(layer_t *self, const tensor_t *input)
 {
-    assert(self != NULL && "Layer pointer is NULL in dense_forward.");
-    assert(input != NULL && "Input tensor is NULL in dense_forward.");
+    if (self == NULL || input == NULL)
+    {
+        return NULL;
+    }
 
     dense_layer_t *dense = (dense_layer_t *)self;
     dense_parameters_t *params = (dense_parameters_t *)self->params;
 
-    assert(input->ndim == 2 && "Input tensor must be 2-dimensional in dense_forward.");
-    assert(input->shape[1] == dense->input_dim && "Input tensor has incompatible shape in dense_forward.");
+    if (input->ndim != 2)
+    {
+        return NULL;
+    }
+    if (input->shape[1] != dense->input_dim)
+    {
+        return NULL;
+    }
 
     size_t batch_size = input->shape[0];
     size_t output_dim = dense->output_dim;
@@ -106,7 +153,10 @@ tensor_t* dense_forward(layer_t *self, const tensor_t *input)
 
     size_t output_shape[2] = {batch_size, output_dim};
     tensor_t *output = tensor_zeros(output_shape, 2);
-    assert(output != NULL && "Failed to create output tensor in dense_forward.");
+    if (output == NULL)
+    {
+        return NULL;
+    }
 
     const float *__restrict__ input_data = input->data;
     const float *__restrict__ weights_data = params->weights->data;
@@ -140,15 +190,25 @@ tensor_t* dense_forward(layer_t *self, const tensor_t *input)
 
 void dense_backward(tensor_t *output)
 {
-    assert(output != NULL && "Output tensor is NULL in dense_backward.");
-    assert(output->grad != NULL && "Output tensor gradient is NULL in dense_backward.");
+    if (output == NULL || output->grad == NULL)
+    {
+        return;
+    }
 
     layer_t *layer = (layer_t *)output->context;
-    assert(layer != NULL && "Layer is NULL in dense_backward.");
+    if (layer == NULL)
+    {
+        return;
+    }
 
     dense_layer_t *dense = (dense_layer_t *)layer;
     dense_parameters_t *params = (dense_parameters_t *)layer->params;
     tensor_t *input = layer->input;
+
+    if (input == NULL || input->grad == NULL)
+    {
+        return;
+    }
 
     size_t batch_size = input->shape[0];
     size_t output_dim = dense->output_dim;
@@ -189,14 +249,19 @@ void dense_backward(tensor_t *output)
     }
 }
 
-void dense_free(layer_t *self)
+layer_status_code_t dense_destroy(layer_t *self)
 {
     if (self == NULL)
     {
-        return;
+        return LAYER_DESTROY_FAILURE;
     }
 
     dense_layer_t *dense = (dense_layer_t *)self;
     
-    pool_free(dense);
+    if (pool_free(dense) == POOL_FREE_FAILURE)
+    {
+        return LAYER_DESTROY_FAILURE;
+    }
+    
+    return LAYER_DESTROY_SUCCESS;
 }

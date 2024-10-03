@@ -19,4 +19,16 @@ typedef const enum tensor_status_code
     TENSOR_DESTROY_FAILURE
 } tensor_status_code_t;
 
+typedef const enum parameters_status_code
+{
+    PARAMETERS_DESTROY_SUCCESS,
+    PARAMETERS_DESTROY_FAILURE
+} parameters_status_code_t;
+
+typedef const enum layer_status_code
+{
+    LAYER_DESTROY_SUCCESS,
+    LAYER_DESTROY_FAILURE
+} layer_status_code_t;
+
 #endif

@@ -1,12 +1,12 @@
-#include <assert.h>
 #include <string.h> 
 #include "ops/backward/backward.h"
 
 void tensor_add_backward(tensor_t* __restrict__ self) 
 {
-    assert(self != NULL && "Input tensor is NULL in tensor_add_backward.");
-    assert(self->grad_a != NULL && "grad_a tensor is NULL in tensor_add_backward.");
-    assert(self->grad_b != NULL && "grad_b tensor is NULL in tensor_add_backward.");
+    if (self == NULL || self->grad_a == NULL || self->grad_b == NULL)
+    {
+        return;
+    }
 
     tensor_t* a = self->grad_a;
     tensor_t* b = self->grad_b;
@@ -32,8 +32,10 @@ void tensor_add_backward(tensor_t* __restrict__ self)
 
 void tensor_reshape_backward(tensor_t* __restrict__ self) 
 {
-    assert(self != NULL && "Input tensor is NULL in tensor_reshape_backward.");
-    assert(self->grad_a != NULL && "grad_a tensor is NULL in tensor_reshape_backward.");
+    if (self == NULL || self->grad_a == NULL)
+    {
+        return;
+    }
 
     tensor_t* tensor = self->grad_a;
     float* __restrict__ grad = tensor->grad;

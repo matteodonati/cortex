@@ -70,17 +70,24 @@ tensor_status_code_t tensor_destroy(tensor_t* tensor)
     {
         return TENSOR_DESTROY_FAILURE;
     }
-    
     if (tensor->data)
     {
-        pool_free(tensor->data);
+        if (pool_free(tensor->data) == POOL_FREE_FAILURE)
+        {
+            return TENSOR_DESTROY_FAILURE;
+        }
     }
     if (tensor->grad)
     {
-        pool_free(tensor->grad);
+        if (pool_free(tensor->grad) == POOL_FREE_FAILURE)
+        {
+            return TENSOR_DESTROY_FAILURE;
+        }
     }
-    pool_free(tensor);
-
+    if (pool_free(tensor) == POOL_FREE_FAILURE)
+    {
+        return TENSOR_DESTROY_FAILURE;
+    }
     return TENSOR_DESTROY_SUCCESS;
 }
 
